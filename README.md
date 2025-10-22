@@ -1,1 +1,1 @@
-# GeSAI-AB_Data_Challenge
+# GeSAI AB Data Challenge
