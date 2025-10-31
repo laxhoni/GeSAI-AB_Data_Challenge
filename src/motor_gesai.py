@@ -1,143 +1,174 @@
+# src/motor_gesai.py
 
-### USERS
-# Verificar Credenciales de Usuario
+"""
+Este es el "Cerebro" del proyecto (Motor GeSAI).
+Contiene toda la lógica de negocio, acceso a BBDD y modelos de IA.
+NO debe contener NADA de Dash (html, dcc, callbacks).
+"""
+
+# --- MOCKS DE BASE DE DATOS (El Equipo Core AI debe implementar esto) ---
+
+# Mock de la tabla de usuarios
+MOCK_USUARIOS_DB = {
+    "empresa@gesai.com": {"contrasena": "1234", "rol": "Empresa", "nombre": "Jhonatan Barcos"}
+    # No hay más usuarios "Cliente"
+}
+
+# Mock de la tabla de incidencias
+MOCK_INCIDENCIAS_DB = [
+    {'id': 101, 'cliente_id': 50, 'cliente_nombre': 'Oscar Sanz', 'fecha': '31/10/2025', 'estado': 'Grave', 'verificacion': 'PENDIENTE', 'descripcion': 'Anomalía detectada en patrón de consumo'},
+    {'id': 102, 'cliente_id': 51, 'cliente_nombre': 'María García', 'fecha': '31/10/2025', 'estado': 'Moderada', 'verificacion': 'PENDIENTE', 'descripcion': 'Variación inusual en horario nocturno'},
+]
+
+# Mock de la tabla de notificaciones (para el simulador de móvil)
+MOCK_NOTIFICACIONES_DB = []
+
+# Mock de la tabla de tokens de verificación
+MOCK_TOKENS_DB = {} # Ej: {"aB12cDe3fG4h": 105}
+
+
+# --- CONTRATO 1: USUARIOS ---
+
 def verificar_credenciales(usuario: str, contrasena: str) -> dict:
-    """
-    Verifica un usuario y contraseña contra la BBDD.
-    
-    Args:
-        usuario (str): El nombre de usuario (o email).
-        contrasena (str): La contraseña en texto plano.
-    
-    Returns:
-        dict: Un diccionario con el resultado.
-              Ejemplo: {'success': True, 'rol': 'Empresa', 'nombre': 'Jhonatan Barcos'}
-              o {'success': False, 'message': 'Credenciales incorrectas'}
-    """
-    # --- MOCK (implementación falsa) ---
+    """Verifica un usuario (solo empresa) y contraseña."""
     print(f"MOCK: verificando credenciales para usuario={usuario}")
-    
-    # Base de datos falsa de usuarios
-    USUARIOS_BBDD = {
-        "empresa@gesai.com": {"contrasena": "1234", "rol": "Empresa", "nombre": "Jhonatan (Empresa)"},
-        "cliente@gesai.com": {"contrasena": "abcd", "rol": "Cliente", "nombre": "Oscar (Cliente)", "incidencia_id_activa": 101}
-    }
-    
-    if usuario in USUARIOS_BBDD and USUARIOS_BBDD[usuario]["contrasena"] == contrasena:
-        # ¡Éxito! Devolvemos los datos del usuario.
-        user_data = USUARIOS_BBDD[usuario]
-        return {
-            'success': True,
-            'rol': user_data['rol'],
-            'nombre': user_data['nombre'],
-            'datos_extra': {'incidencia_id': user_data.get('incidencia_id_activa')} if user_data.get('rol') == 'Cliente' else {}
-        }
+    if usuario in MOCK_USUARIOS_DB and MOCK_USUARIOS_DB[usuario]["contrasena"] == contrasena:
+        user_data = MOCK_USUARIOS_DB[usuario]
+        return {'success': True, 'rol': user_data['rol'], 'nombre': user_data['nombre']}
     else:
-        # Fracaso
         return {'success': False, 'message': 'Usuario o contraseña incorrectos'}
 
+# --- CONTRATO 2: LÓGICA DE EMPRESA ---
 
-
-
-
-### EMPRESA: Motor Gesai
 def get_lista_incidencias_activas(tipo_filtro: str = "todas") -> list[dict]:
-    """
-    Obtiene una lista de todas las incidencias que requieren atención.
-    (MOCK ACTUAL - Reemplazar con consulta a BBDD real)
-    """
-    print(f"MOCK: get_lista_incidencias_activas(filtro={tipo_filtro})")
-    
-    # --- *** INICIO DE LA CORRECCIÓN *** ---
-    # Faltaba el campo 'cliente_nombre' en tus datos
-    todas_las_incidencias = [
-        {'id': 101, 'cliente_id': 50, 'cliente_nombre': 'Oscar Sanz', 'fecha': '31/10/2025', 'estado': 'Grave', 'descripcion': 'Anomalía detectada en patrón de consumo'},
-        {'id': 102, 'cliente_id': 51, 'cliente_nombre': 'María García', 'fecha': '31/10/2025', 'estado': 'Moderada', 'descripcion': 'Variación inusual en horario nocturno'},
-        {'id': 103, 'cliente_id': 52, 'cliente_nombre': 'Carlos Ruiz', 'fecha': '30/10/2025', 'estado': 'Grave', 'descripcion': 'Pico de consumo anómalo detectado'},
-        {'id': 104, 'cliente_id': 53, 'cliente_nombre': 'Ana López', 'fecha': '30/10/2025', 'estado': 'Leve', 'descripcion': 'Desviación menor en consumo habitual'}
-    ]
-    # --- *** FIN DE LA CORRECCIÓN *** ---
+    """Obtiene una lista de todas las incidencias de la BBDD."""
+    print(f"MOCK BBDD: get_lista_incidencias_activas(filtro={tipo_filtro})")
     
     if tipo_filtro == "todas":
-        return todas_las_incidencias
+        return MOCK_INCIDENCIAS_DB
     else:
-        return [inc for inc in todas_las_incidencias if inc['estado'] == tipo_filtro]
+        return [inc for inc in MOCK_INCIDENCIAS_DB if inc['estado'] == tipo_filtro]
 
-# Get Detalles de una Incidencia
 def get_detalles_incidencia(incidencia_id: int) -> dict:
-    """
-    Obtiene toda la información detallada de una única incidencia.
+    """Obtiene toda la información detallada de una única incidencia."""
+    print(f"MOCK BBDD: get_detalles_incidencia(id={incidencia_id})")
     
-    Args:
-        incidencia_id (int): El ID de la incidencia a buscar.
-    
-    Returns:
-        dict: Un diccionario con toda la info.
-              Ejemplo: {'success': True,
-                        'datos_incidencia': {'id': 101, 'estado': 'Grave', ...},
-                        'datos_cliente': {'nombre': 'Oscar Sanz', 'telefono': '600123456'},
-                        'ruta_informe_pdf': 'generated_reports/incidencia_101.pdf'}
-              o {'success': False, 'message': 'Incidencia no encontrada'}
-    """
-    # --- MOCK (implementación falsa) ---
-    print(f"MOCK: get_detalles_incidencia(id={incidencia_id})")
-    if incidencia_id == 101:
-        # Simula que genera el PDF
-        ruta_falsa_pdf = "generated_reports/incidencia_101_MOCK.pdf"
-        
-        return {
-            'success': True,
-            'datos_incidencia': {'id': 101, 'fecha': '31/10/2025', 'estado': 'Grave', 'verificacion': 'PENDIENTE'},
-            'datos_cliente': {'nombre': 'Oscar Sanz', 'telefono': '600123456'},
-            'ruta_informe_pdf': ruta_falsa_pdf
-        }
-    else:
-        return {'success': False, 'message': 'Incidencia no encontrada'}
-    
-    
-    ### CLIENTE
-    # Registrar Verificación del Cliente
-def registrar_verificacion_cliente(incidencia_id: int, respuesta: str) -> dict:
-    """
-    Registra la respuesta de verificación del cliente en la BBDD.
-    
-    Args:
-        incidencia_id (int): El ID de la incidencia que se está verificando.
-        respuesta (str): "SI" o "NO", según la selección del cliente.
-    
-    Returns:
-        dict: Un diccionario indicando el resultado.
-              Ejemplo: {'success': True, 'message': 'Respuesta registrada correctamente'}
-    """
-    # --- MOCK (implementación falsa) ---
-    print(f"MOCK: registrar_verificacion_cliente(id={incidencia_id}, respuesta='{respuesta}')")
-    
-    # 1. Simula la escritura en BBDD
-    # 2. Simula la actualización del informe (llamando a get_detalles_incidencia)
-    
-    return {'success': True, 'message': f'Respuesta "{respuesta}" registrada (MOCK)'}
+    # Simulación de búsqueda en BBDD
+    for inc in MOCK_INCIDENCIAS_DB:
+        if inc['id'] == incidencia_id:
+            # (En la app real, aquí harías un JOIN con la tabla de clientes)
+            mock_cliente_data = {
+                101: {'nombre': 'Oscar Sanz', 'telefono': '600123456', 'email': 'cliente@gesai.com', 'direccion': 'Calle Ficticia 123, Barcelona'},
+                102: {'nombre': 'María García', 'telefono': '600987654', 'email': 'maria@email.com', 'direccion': 'Avenida Ejemplo 45, L\'Hospitalet'},
+                105: {'nombre': 'Cliente Nuevo', 'telefono': '600111222', 'email': 'nuevo@email.com', 'direccion': 'Plaza Simulada 1'}
+            }
+            return {
+                'success': True,
+                'datos_incidencia': inc,
+                'datos_cliente': mock_cliente_data.get(inc['id'], {'nombre': 'Desconocido'})
+            }
+            
+    return {'success': False, 'message': f'Incidencia con ID {incidencia_id} no encontrada.'}
 
-
-### MODELO
-# --- CONTRATO 4 ---
-def ejecutar_deteccion_lstm(cliente_id: int) -> dict:
+def ejecutar_deteccion_lstm(cliente_id: int, cliente_nombre: str) -> dict:
     """
     Ejecuta el modelo de detección de LSTM para un cliente específico.
-    Si detecta algo, crea una nueva incidencia en la BBDD.
-    
-    Args:
-        cliente_id (int): El ID del cliente a analizar.
-    
-    Returns:
-        dict: Un diccionario con el resultado.
-              Ejemplo: {'status': 'ALERTA', 'incidencia_id': 103, 'message': '...'}
-              o {'status': 'OK', 'message': 'No se detectaron anomalías'}
+    Si detecta algo, crea una nueva incidencia Y UNA NOTIFICACIÓN PUSH.
     """
-    # --- MOCK (implementación falsa) ---
-    print(f"MOCK: ejecutar_deteccion_lstm(cliente_id={cliente_id})")
+    print(f"MOCK IA: ejecutando detección para cliente_id={cliente_id}")
     
-    # Simula una detección
-    if cliente_id % 2 == 0: # Simula que detecta en clientes pares
-        return {'status': 'ALERTA', 'incidencia_id': 103, 'message': 'Anomalía Grave detectada (MOCK)'}
-    else:
-        return {'status': 'OK', 'message': 'No se detectaron anomalías (MOCK)'}
+    # --- SIMULACIÓN DE DETECCIÓN ---
+    # 1. Crear nueva incidencia en la BBDD
+    nueva_incidencia_id = len(MOCK_INCIDENCIAS_DB) + 100
+    nueva_incidencia = {
+        'id': nueva_incidencia_id,
+        'cliente_id': cliente_id,
+        'cliente_nombre': cliente_nombre,
+        'fecha': '31/10/2025',
+        'estado': 'Grave',
+        'verificacion': 'PENDIENTE',
+        'descripcion': 'Detección simulada por IA'
+    }
+    MOCK_INCIDENCIAS_DB.append(nueva_incidencia)
+    print(f"MOCK BBDD: Nueva incidencia creada: {nueva_incidencia}")
+
+    # 2. Crear un token de verificación único
+    token = f"token_para_incidencia_{nueva_incidencia_id}"
+    MOCK_TOKENS_DB[token] = nueva_incidencia_id
+    
+    # 3. Crear el link y el mensaje
+    link_verificacion = f"http://127.0.0.1:8050/verificar/{token}"
+    mensaje_sms = f"Hola {cliente_nombre}, somos GeSAI. Hemos detectado una anomalía (ID: {nueva_incidencia_id}). Por favor, pulsa aquí para verificar: {link_verificacion}"
+
+    # 4. ESCRIBIR EN LA BBDD DE NOTIFICACIONES (para el móvil)
+    nueva_notificacion = {
+        'notificacion_id': len(MOCK_NOTIFICACIONES_DB) + 1,
+        'cliente_id': cliente_id,
+        'mensaje': mensaje_sms,
+        'link': link_verificacion,
+        'leida': False
+    }
+    MOCK_NOTIFICACIONES_DB.append(nueva_notificacion)
+    print(f"MOCK BBDD: Nueva notificación PUSH guardada: {nueva_notificacion}")
+    
+    return {'status': 'ALERTA', 'message': f'¡Detección! Incidencia #{nueva_incidencia_id} creada y notificación enviada.'}
+
+
+# --- CONTRATO 3: LÓGICA PÚBLICA (Móvil y Verificación) ---
+
+def get_notificaciones_pendientes_cliente(cliente_id: int) -> list[dict]:
+    """
+    Es llamada CADA 3 SEGUNDOS por el simulador de móvil.
+    Busca en la BBDD si hay notificaciones no leídas para ese cliente.
+    """
+    print(f"MOCK BBDD: El móvil del cliente {cliente_id} está pidiendo notificaciones...")
+    
+    notificaciones_no_leidas = []
+    for notif in MOCK_NOTIFICACIONES_DB:
+        if notif['cliente_id'] == cliente_id and notif['leida'] == False:
+            notificaciones_no_leidas.append(notif)
+            
+    return notificaciones_no_leidas
+
+def marcar_notificacion_leida(notificacion_id: int):
+    """
+Recibe el ID de la notificación (no de la incidencia) y la marca como leída."""
+    print(f"MOCK BBDD: Marcando notificación {notificacion_id} como leída.")
+    for notif in MOCK_NOTIFICACIONES_DB:
+        if notif['notificacion_id'] == notificacion_id:
+            notif['leida'] = True
+            break
+    return True
+
+def validar_token_y_registrar(token: str, respuestas_encuesta: dict) -> dict:
+    """
+    Valida un token de la URL y registra la encuesta completa del cliente.
+    """
+    print(f"MOCK BBDD: Validando token {token} con respuestas {respuestas_encuesta}")
+    
+    # 1. Validar el token
+    if token not in MOCK_TOKENS_DB:
+        return {'success': False, 'message': 'Token no válido o expirado.'}
+        
+    incidencia_id = MOCK_TOKENS_DB[token]
+    
+    # 2. Actualizar la BBDD de Incidencias
+    encontrada = False
+    for inc in MOCK_INCIDENCIAS_DB:
+        if inc['id'] == incidencia_id:
+            # En la BBDD real, guardarías las 6 respuestas.
+            # Aquí, solo actualizamos el estado de verificación.
+            inc['verificacion'] = f"VERIFICADO (Encuesta Recibida)"
+            encontrada = True
+            break
+            
+    if not encontrada:
+        return {'success': False, 'message': 'Incidencia asociada no encontrada.'}
+        
+    # 3. Borrar el token
+    del MOCK_TOKENS_DB[token]
+    
+    # Puedes ver las respuestas del servidor
+    print(f"RESPUESTAS RECIBIDAS: {respuestas_encuesta}")
+    
+    return {'success': True, 'message': f'¡Gracias! Su encuesta ha sido registrada para la incidencia #{incidencia_id}'}
