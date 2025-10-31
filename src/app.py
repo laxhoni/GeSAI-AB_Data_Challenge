@@ -33,13 +33,18 @@ app.title = "GesAI"
 
 def build_login_layout():
     """Construye el layout de la página de Inicio de Sesión (Solo Empresa)."""
-    # (Este es tu layout de login completo, sin '...')
     return html.Div([
         html.Div([
             html.Div(className='logo-container', children=[
-                html.Div(html.Div('🛡️', style={'fontSize': '40px', 'color': 'white'}), className='logo-icon'),
-                html.H1('GesAI', className='app-title'),
-                html.P('Portal de Gestión Empresarial', className='app-subtitle'),
+                
+                # --- *** INICIO DE LA MODIFICACIÓN *** ---
+                html.Img(src=app.get_asset_url('logo_1.png'), 
+                         style={'height': '90px', 'width': 'auto', 'marginBottom': '20px'}),
+                
+                # html.H1('GesAI', className='app-title'), <-- TÍTULO ELIMINADO
+                # --- *** FIN DE LA MODIFICACIÓN *** ---
+
+                html.P('Portal de Gestión de Incidencias', className='app-subtitle'),
             ]),
             html.Div([
                 html.Label('Usuario / Email', style={'fontWeight': '500', 'marginBottom': '8px', 'display': 'block', 'color': '#374151'}),
@@ -58,42 +63,44 @@ def build_login_layout():
         ], className='login-card'),
     ], className='login-container')
 
+# src/app.py
+
+# src/app.py
+
 def build_empresa_layout(session_data):
     """Construye el layout del Dashboard de Empresa."""
     nombre_usuario = session_data.get('nombre', 'Usuario')
     return html.Div([
         dcc.Interval(id='intervalo-actualizacion-empresa', interval=5*1000, n_intervals=0),
         
-        # --- *** INICIO DE LA CORRECCIÓN *** ---
-        # AÑADIMOS EL ATRIBUTO 'style' QUE FALTABA
-        html.Div(
-            className='header-dashboard', 
-            style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, # <-- ESTA LÍNEA ES LA CLAVE
-            children=[
-        # --- *** FIN DE LA CORRECCIÓN *** ---
+        html.Div(className='header-dashboard', 
+                 style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, 
+                 children=[
             
-                # --- HIJO 1 (LADO IZQUIERDO) ---
-                html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
-                    html.Div(style={'width': '45px', 'height': '45px', 'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'borderRadius': '10px', 'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center', 'marginRight': '15px'}, children=[
-                        html.Div('🛡️', style={'fontSize': '24px', 'color': 'white'})
-                    ]),
-                    html.Div([
-                        html.H3('GesAI Dashboard', style={'margin': '0', 'fontSize': '20px', 'fontWeight': '700'}),
-                        html.P('Panel de Control Empresarial', style={'margin': '0', 'fontSize': '13px', 'color': '#6b7280'}),
-                    ]),
-                ]),
+            html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
                 
-                # --- HIJO 2 (LADO DERECHO) ---
-                html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
-                    html.Div(style={'padding': '10px 20px', 'background': '#eff6ff', 'borderRadius': '10px', 'marginRight': '15px'}, children=[
-                        html.Span('🏢 ', style={'marginRight': '8px'}),
-                        html.Span(nombre_usuario, style={'fontWeight': '600', 'color': '#374151'}),
-                    ]),
-                    html.Button('Cerrar Sesión', id={'type': 'btn-logout', 'index': 'empresa'}, n_clicks=0, style={'padding': '10px 20px', 'background': '#fee2e2', 'color': '#dc2626', 'border': 'none', 'borderRadius': '10px', 'fontWeight': '600', 'cursor': 'pointer'}),
+                # --- *** INICIO DE LA MODIFICACIÓN *** ---
+                html.Img(src=app.get_asset_url('logo_2.png'), 
+                         style={'height': '45px', 'width': 'auto', 'marginRight': '15px'}),
+                
+                # Título que pediste, añadido de vuelta
+                html.Div([
+                    html.H3('Panel de Gestión de Incidencias', style={'margin': '0', 'fontSize': '20px', 'fontWeight': '700'}),
                 ]),
+                # --- *** FIN DE LA MODIFICACIÓN *** ---
+                
+            ]),
+            
+            html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
+                html.Div(style={'padding': '10px 20px', 'background': '#eff6ff', 'borderRadius': '10px', 'marginRight': '15px'}, children=[
+                    html.Span('🏢 ', style={'marginRight': '8px'}),
+                    html.Span(nombre_usuario, style={'fontWeight': '600', 'color': '#374151'}),
+                ]),
+                html.Button('Cerrar Sesión', id={'type': 'btn-logout', 'index': 'empresa'}, n_clicks=0, style={'padding': '10px 20px', 'background': '#fee2e2', 'color': '#dc2626', 'border': 'none', 'borderRadius': '10px', 'fontWeight': '600', 'cursor': 'pointer'}),
+            ]),
         ]),
         
-        # --- (EL RESTO DEL LAYOUT SIGUE IGUAL) ---
+        # ... (El resto de tu layout de dashboard no cambia) ...
         html.Div(style={'maxWidth': '1400px', 'margin': '0 auto', 'padding': '40px 20px'}, children=[
             html.Div(id='stats-container', style={'marginBottom': '30px'}),
             
@@ -127,7 +134,6 @@ def build_empresa_layout(session_data):
             html.Div(id='incidencias-container'),
         ]),
     ])
-    
 def _build_survey_layout(token):
     """Función helper que construye la encuesta (para móvil o página pública)."""
     preguntas = [
