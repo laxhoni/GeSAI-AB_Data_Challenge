@@ -6,8 +6,6 @@ import dash_bootstrap_components as dbc
 import time
 
 # --- 1. IMPORTAR EL "CEREBRO" ---
-# (Asegúrate de que src/motor_gesai.py está actualizado
-#  con la nueva función 'validar_token_y_registrar')
 from motor_gesai import (
     verificar_credenciales,
     get_lista_incidencias_activas,
@@ -25,7 +23,8 @@ external_stylesheets = [
 ]
 app = dash.Dash(__name__, 
                 external_stylesheets=external_stylesheets, 
-                suppress_callback_exceptions=True) # <-- Parámetro clave
+                suppress_callback_exceptions=True,
+                assets_folder='assets') # <-- Assegura't que apunta a la teva carpeta 'assets'
 app.title = "GesAI"
 
 
@@ -36,36 +35,26 @@ def build_login_layout():
     return html.Div([
         html.Div([
             html.Div(className='logo-container', children=[
-                
-                # --- *** INICIO DE LA MODIFICACIÓN *** ---
-                html.Img(src=app.get_asset_url('logo_1.png'), 
-                         style={'height': '90px', 'width': 'auto', 'marginBottom': '20px'}),
-                
-                # html.H1('GesAI', className='app-title'), <-- TÍTULO ELIMINADO
-                # --- *** FIN DE LA MODIFICACIÓN *** ---
-
+                html.Img(src=app.get_asset_url('logo_1.png'), className='logo-login'),
                 html.P('Portal de Gestión de Incidencias', className='app-subtitle'),
             ]),
             html.Div([
-                html.Label('Usuario / Email', style={'fontWeight': '500', 'marginBottom': '8px', 'display': 'block', 'color': '#374151'}),
-                dcc.Input(id='input-usuario', type='text', placeholder='empresa@gesai.com', style={'width': '100%', 'padding': '12px 16px', 'borderRadius': '10px', 'border': '1px solid #d1d5db', 'fontSize': '14px', 'marginBottom': '20px'}),
+                html.Label('Usuario / Email', className='form-label'),
+                dcc.Input(id='input-usuario', type='text', placeholder='empresa@gesai.com', className='form-input'),
             ]),
             html.Div([
-                html.Label('Contraseña', style={'fontWeight': '500', 'marginBottom': '8px', 'display': 'block', 'color': '#374151'}),
-                dcc.Input(id='input-password', type='password', placeholder='••••••••', style={'width': '100%', 'padding': '12px 16px', 'borderRadius': '10px', 'border': '1px solid #d1d5db', 'fontSize': '14px', 'marginBottom': '20px'}),
+                html.Label('Contraseña', className='form-label'),
+                dcc.Input(id='input-password', type='password', placeholder='••••••••', className='form-input'),
             ]),
-            html.Div(id='login-error', style={'marginBottom': '15px'}),
-            html.Button('Iniciar Sesión', id='btn-login', n_clicks=0, className='btn-primary-custom', style={'width': '100%', 'fontSize': '15px'}),
+            html.Div(id='login-error', className='login-error-message'),
+            html.Button('Iniciar Sesión', id='btn-login', n_clicks=0, className='btn-primary-custom btn-full-width'),
             html.Div([
-                html.Hr(style={'margin': '30px 0', 'borderColor': '#e5e7eb'}),
-                html.P('Cuenta de prueba: empresa@gesai.com / 1234', style={'fontSize': '12px', 'color': '#6b7280', 'textAlign': 'center'}),
+                html.Hr(className='login-divider'),
+                html.P('Cuenta de prueba: empresa@gesai.com / 1234', className='login-test-info'),
             ]),
         ], className='login-card'),
     ], className='login-container')
 
-# src/app.py
-
-# src/app.py
 
 def build_empresa_layout(session_data):
     """Construye el layout del Dashboard de Empresa."""
@@ -73,55 +62,44 @@ def build_empresa_layout(session_data):
     return html.Div([
         dcc.Interval(id='intervalo-actualizacion-empresa', interval=5*1000, n_intervals=0),
         
-        html.Div(className='header-dashboard', 
-                 style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, 
-                 children=[
-            
-            html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
-                
-                # --- *** INICIO DE LA MODIFICACIÓN *** ---
-                html.Img(src=app.get_asset_url('logo_2.png'), 
-                         style={'height': '45px', 'width': 'auto', 'marginRight': '15px'}),
-                
-                # Título que pediste, añadido de vuelta
+        html.Div(className='header-dashboard', children=[
+            html.Div(className='layout-flex-center', children=[
+                html.Img(src=app.get_asset_url('logo_2.png'), className='logo-dashboard'),
                 html.Div([
-                    html.H3('Panel de Gestión de Incidencias', style={'margin': '0', 'fontSize': '20px', 'fontWeight': '700'}),
+                    html.H3('Panel de Gestión de Incidencias', className='dashboard-title'),
                 ]),
-                # --- *** FIN DE LA MODIFICACIÓN *** ---
-                
             ]),
             
-            html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
-                html.Div(style={'padding': '10px 20px', 'background': '#eff6ff', 'borderRadius': '10px', 'marginRight': '15px'}, children=[
-                    html.Span('🏢 ', style={'marginRight': '8px'}),
-                    html.Span(nombre_usuario, style={'fontWeight': '600', 'color': '#374151'}),
+            html.Div(className='layout-flex-center', children=[
+                html.Div(className='user-info-badge', children=[
+                    html.Span('🏢 ', className='user-info-icon'),
+                    html.Span(nombre_usuario, className='user-info-name'),
                 ]),
-                html.Button('Cerrar Sesión', id={'type': 'btn-logout', 'index': 'empresa'}, n_clicks=0, style={'padding': '10px 20px', 'background': '#fee2e2', 'color': '#dc2626', 'border': 'none', 'borderRadius': '10px', 'fontWeight': '600', 'cursor': 'pointer'}),
+                html.Button('Cerrar Sesión', id={'type': 'btn-logout', 'index': 'empresa'}, n_clicks=0, className='btn-logout'),
             ]),
         ]),
         
-        # ... (El resto de tu layout de dashboard no cambia) ...
-        html.Div(style={'maxWidth': '1400px', 'margin': '0 auto', 'padding': '40px 20px'}, children=[
-            html.Div(id='stats-container', style={'marginBottom': '30px'}),
+        html.Div(className='main-content-container', children=[
+            html.Div(id='stats-container', className='stats-container-spacing'),
             
             html.Div(className='search-box', children=[
                 html.H5("Panel de Simulación de Detección"),
                 html.P("Simula una detección de IA para un cliente y envía una notificación a su móvil simulado."),
                 dbc.Row([
-                    dbc.Col(dcc.Input(id='sim-cliente-id', type='number', placeholder='ID Cliente (ej. 50)', style={'width': '100%'})),
-                    dbc.Col(dcc.Input(id='sim-cliente-nombre', type='text', placeholder='Nombre Cliente (ej. Oscar Sanz)', style={'width': '100%'})),
+                    dbc.Col(dcc.Input(id='sim-cliente-id', type='number', placeholder='ID Cliente (ej. 50)', className='form-input-full')),
+                    dbc.Col(dcc.Input(id='sim-cliente-nombre', type='text', placeholder='Nombre Cliente (ej. Oscar Sanz)', className='form-input-full')),
                     dbc.Col(html.Button('Ejecutar Detección', id='btn-ejecutar-sim', className='btn-primary-custom')),
                 ]),
-                html.Div(id='sim-resultado', style={'marginTop': '15px'})
+                html.Div(id='sim-resultado', className='sim-result-spacing')
             ]),
             
             html.Div(className='search-box', children=[
-                html.Div(style={'display': 'flex', 'marginBottom': '20px'}, children=[
-                    dcc.Input(id='input-busqueda-id', type='number', placeholder='Buscar por ID de incidencia...', style={'flex': '1', 'padding': '12px 16px', 'borderRadius': '10px', 'border': '1px solid #d1d5db', 'marginRight': '10px'}),
+                html.Div(className='search-bar-container', children=[
+                    dcc.Input(id='input-busqueda-id', type='number', placeholder='Buscar por ID de incidencia...', className='search-input-flex'),
                     html.Button('🔍 Buscar', id='btn-buscar', n_clicks=0, className='btn-primary-custom'),
                 ]),
-                html.Div(style={'display': 'flex', 'alignItems': 'center'}, children=[
-                    html.Span('Filtrar por estado:', style={'marginRight': '15px', 'fontWeight': '600', 'color': '#374151'}),
+                html.Div(className='layout-flex-center', children=[
+                    html.Span('Filtrar por estado:', className='filter-label'),
                     html.Button('Todas', id={'type': 'filtro-btn', 'index': 'todas'}, n_clicks=0, className='filter-btn filter-btn-active'),
                     html.Button('Grave', id={'type': 'filtro-btn', 'index': 'Grave'}, n_clicks=0, className='filter-btn'),
                     html.Button('Moderada', id={'type': 'filtro-btn', 'index': 'Moderada'}, n_clicks=0, className='filter-btn'),
@@ -134,6 +112,7 @@ def build_empresa_layout(session_data):
             html.Div(id='incidencias-container'),
         ]),
     ])
+    
 def _build_survey_layout(token):
     """Función helper que construye la encuesta (para móvil o página pública)."""
     preguntas = [
@@ -152,47 +131,38 @@ def _build_survey_layout(token):
     ]
     
     return html.Div([
-        html.H5("Encuesta de Verificación", style={'color': '#111', 'textAlign': 'center', 'marginBottom': '20px'}),
-        html.P(f"Por favor, responda a estas preguntas sobre su incidencia.", style={'fontSize': '14px', 'color': '#666'}),
+        html.H5("Encuesta de Verificación", className='survey-title'),
+        html.P(f"Por favor, responda a estas preguntas sobre su incidencia.", className='survey-subtitle'),
         dcc.Store(id='store-token', data=token),
         
         *[html.Div([
-            html.Label(preg, style={'fontWeight': '600', 'fontSize': '15px'}),
+            html.Label(preg, className='survey-question-label'),
             dcc.RadioItems(
                 id={'type': 'survey-q', 'index': i+1},
                 options=opciones,
                 value=None,
-                style={'marginTop': '5px', 'marginBottom': '15px'}
+                className='survey-radio-group'
             )
         ]) for i, preg in enumerate(preguntas)],
         
-        html.Button('Enviar Encuesta', id='btn-submit-survey', n_clicks=0, className='btn-primary-custom', style={'width': '100%', 'marginTop': '10px'}),
-        html.Div(id='survey-result', style={'marginTop': '15px', 'textAlign': 'center'})
+        html.Button('Enviar Encuesta', id='btn-submit-survey', n_clicks=0, className='btn-primary-custom btn-full-width btn-margin-top'),
+        html.Div(id='survey-result', className='survey-result-container')
     ])
 
-# src/app.py
 
 def build_simulador_movil_layout(cliente_id, pathname):
     """
     Construye el layout que SIMULA un teléfono móvil realista.
-    AHORA ES DINÁMICO: muestra la lista de notificaciones O la encuesta
-    basándose en la URL (pathname).
     """
-    
-    # --- *** INICIO DE LA CORRECCIÓN *** ---
     contenido_pantalla = None
     
-    # Comprobamos si la palabra 'verificar' está en la URL
     if 'verificar' in pathname:
-        # Si la URL es /sim-movil/.../verificar/, mostramos la encuesta
         token = pathname.split('/')[-1]
         contenido_pantalla = _build_survey_layout(token)
     else:
-        # Si la URL es /sim-movil/..., mostramos la lista de notificaciones
         contenido_pantalla = html.Div(id='div-notificaciones-movil', children=[
-            html.P("Esperando notificaciones...", style={'padding': '20px', 'color': '#888', 'textAlign': 'center'})
+            html.P("Esperando notificaciones...", className='mobile-waiting-text')
         ])
-    # --- *** FIN DE LA CORRECCIÓN *** ---
         
     return html.Div(className='mobile-frame', children=[
         dcc.Store(id='store-cliente-id', data=cliente_id),
@@ -201,12 +171,10 @@ def build_simulador_movil_layout(cliente_id, pathname):
         html.Div(className='mobile-screen', children=[
             html.Div(className='mobile-island'),
             html.Div(className='mobile-header', children=[
-                # Título dinámico
                 html.H5("Encuesta" if 'verificar' in pathname else "Notificaciones", 
-                        style={'margin': 0, 'fontWeight': '700'})
+                        className='mobile-header-title')
             ]),
             
-            # El contenido (notificaciones O encuesta) se carga aquí
             html.Div(className='mobile-notifications-area', children=[
                 contenido_pantalla
             ]),
@@ -217,7 +185,7 @@ def build_simulador_movil_layout(cliente_id, pathname):
 
 def build_verificacion_layout(token):
     """Construye la página de encuesta de verificación (pública)."""
-    return html.Div(style={'maxWidth': '800px', 'margin': '50px auto', 'padding': '20px'}, children=[
+    return html.Div(className='verification-page-container', children=[
         html.Div(className='verification-card', children=[
             _build_survey_layout(token) # Reutilizamos el layout de la encuesta
         ])
@@ -244,20 +212,17 @@ def display_page(pathname, session_data):
     
     parts = pathname.strip('/').split('/')
     
-    # Ruta 1: Simulador de Móvil
     if parts[0] == 'sim-movil' and len(parts) >= 2:
         try:
             cliente_id = int(parts[1])
             return build_simulador_movil_layout(cliente_id, pathname)
         except:
-            return html.H2("ID de cliente no válido.", style={'textAlign': 'center', 'marginTop': '50px'})
+            return html.H2("ID de cliente no válido.", className='error-message-centered')
             
-    # Ruta 2: Página de Verificación Pública
     if parts[0] == 'verificar' and len(parts) == 2:
         token = parts[1]
         return build_verificacion_layout(token)
 
-    # Rutas privadas
     if session_data and session_data.get('logged_in'):
         if pathname == '/' or pathname == '/dashboard':
             if session_data['rol'] == 'Empresa':
@@ -279,7 +244,7 @@ def display_page(pathname, session_data):
 )
 def login(n_clicks, usuario, password):
     if not usuario or not password:
-        return no_update, html.Div('Por favor, complete todos los campos.', style={'color': 'red'}), no_update
+        return no_update, html.Div('Por favor, complete todos los campos.'), no_update
     
     resultado = verificar_credenciales(usuario, password)
     
@@ -287,13 +252,13 @@ def login(n_clicks, usuario, password):
         session_data = {'logged_in': True, 'rol': resultado['rol'], 'nombre': resultado['nombre']}
         return session_data, None, '/'
     else:
-        return no_update, html.Div(resultado['message'], style={'color': 'red'}), no_update
+        return no_update, html.Div(resultado['message']), no_update
 
 # Callback 3: Lógica de Cerrar Sesión (Logout)
 @callback(
     [Output('session-store', 'data', allow_duplicate=True),
      Output('url', 'pathname', allow_duplicate=True)],
-    Input({'type': 'btn-logout', 'index': ALL}, 'n_clicks'), # Escucha a todos los botones de logout
+    Input({'type': 'btn-logout', 'index': ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
 def logout(n_clicks_lista):
@@ -316,12 +281,18 @@ def update_stats(n_intervals):
     moderadas = len([i for i in incidencias if i['estado'] == 'Moderada'])
     leves = len([i for i in incidencias if i['estado'] == 'Leve'])
     
+    #
+    # --- AQUEST ÉS EL BLOC CORREGIT ---
+    #
+    # L'error era que 'md=3' estava FORA dels parèntesis de 'dbc.Col'
+    #
     return dbc.Row([
-        dbc.Col(html.Div([html.Div([html.P('Total Activas', className='stat-label'), html.P(str(total), className='stat-number', style={'color': '#3b82f6'})], style={'flex': '1'}), html.Div('📊', style={'fontSize': '40px'})], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, className='stat-card'), md=3),
-        dbc.Col(html.Div([html.Div([html.P('Graves', className='stat-label'), html.P(str(graves), className='stat-number', style={'color': '#dc2626'})], style={'flex': '1'}), html.Div('🚨', style={'fontSize': '40px'})], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, className='stat-card'), md=3),
-        dbc.Col(html.Div([html.Div([html.P('Moderadas', className='stat-label'), html.P(str(moderadas), className='stat-number', style={'color': '#d97706'})], style={'flex': '1'}), html.Div('⚠️', style={'fontSize': '40px'})], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, className='stat-card'), md=3),
-        dbc.Col(html.Div([html.Div([html.P('Leves', className='stat-label'), html.P(str(leves), className='stat-number', style={'color': '#059669'})], style={'flex': '1'}), html.Div('✓', style={'fontSize': '40px'})], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}, className='stat-card'), md=3),
+        dbc.Col(html.Div([html.Div([html.P('Total Activas', className='stat-label'), html.P(str(total), className='stat-number total')], className='stat-info-flex'), html.Div('📊', className='stat-icon')], className='stat-card-content'), className='stat-card', md=3),
+        dbc.Col(html.Div([html.Div([html.P('Graves', className='stat-label'), html.P(str(graves), className='stat-number grave')], className='stat-info-flex'), html.Div('🚨', className='stat-icon')], className='stat-card-content'), className='stat-card', md=3),
+        dbc.Col(html.Div([html.Div([html.P('Moderadas', className='stat-label'), html.P(str(moderadas), className='stat-number moderada')], className='stat-info-flex'), html.Div('⚠️', className='stat-icon')], className='stat-card-content'), className='stat-card', md=3),
+        dbc.Col(html.Div([html.Div([html.P('Leves', className='stat-label'), html.P(str(leves), className='stat-number leve')], className='stat-info-flex'), html.Div('✓', className='stat-icon')], className='stat-card-content'), className='stat-card', md=3),
     ])
+    # --- FI DEL BLOC CORREGIT ---
 
 # Callback 5: Manejar botones de filtro (Empresa)
 @callback(
@@ -344,7 +315,7 @@ def update_active_filter(n_clicks):
 def update_incidencias_list(filtro_activo, n_intervalos):
     incidencias = get_lista_incidencias_activas(filtro_activo)
     if not incidencias:
-        return html.P("No hay incidencias para el filtro seleccionado.", style={'textAlign': 'center', 'marginTop': '30px', 'color': '#6b7280'})
+        return html.P("No hay incidencias para el filtro seleccionado.", className='empty-list-message')
     
     cards = []
     for inc in incidencias:
@@ -352,23 +323,20 @@ def update_incidencias_list(filtro_activo, n_intervalos):
         cards.append(html.Div([
             dbc.Row([
                 dbc.Col(html.H5(f"ID #{inc['id']} - {inc['cliente_nombre']}"), width=8),
-                dbc.Col(html.Span(inc['estado'], className=badge_class), width=4, style={'textAlign': 'right'}),
+                dbc.Col(html.Span(inc['estado'], className=badge_class), width=4, className='text-align-right'),
             ]),
-            html.P(inc['descripcion'], style={'color': '#374151', 'margin': '10px 0'}),
-            html.Small(f"Verificación: {inc['verificacion']}", style={'color': '#6b7280'}),
+            html.P(inc['descripcion'], className='incidencia-description'),
+            html.Small(f"Verificación: {inc['verificacion']}", className='incidencia-verification-status'),
         ], id={'type': 'incidencia-card', 'index': inc['id']}, className='incidencia-card', n_clicks=0))
     return html.Div(cards)
 
-# src/app.py
-
-# ... (callbacks 1 al 6 sin cambios) ...
 
 # Callback 7: Buscar, Clicar en Tarjeta O CERRAR (Empresa)
 @callback(
     Output('modal-detalles', 'children'),
     [Input('btn-buscar', 'n_clicks'),
      Input({'type': 'incidencia-card', 'index': ALL}, 'n_clicks'),
-     Input({'type': 'btn-close-details', 'index': ALL}, 'n_clicks')], # <-- NUEVO INPUT
+     Input({'type': 'btn-close-details', 'index': ALL}, 'n_clicks')],
     State('input-busqueda-id', 'value'),
     prevent_initial_call=True
 )
@@ -380,44 +348,32 @@ def show_incidencia_details(n_clicks_buscar, n_clicks_tarjetas, n_clicks_cerrar,
     if not triggered_id: 
         return no_update
 
-    # --- *** INICIO DE LA NUEVA LÓGICA *** ---
-    
-    # Lógica 1: El usuario ha pulsado "Cerrar"
-    # Comprobamos si el ID es un diccionario y su 'type' es 'btn-close-details'
     if isinstance(triggered_id, dict) and triggered_id.get('type') == 'btn-close-details':
-        return None # Devuelve vacío, "cierra" el modal
+        return None 
 
-    # Lógica 2: El usuario ha pulsado "Buscar"
     if triggered_id == 'btn-buscar':
         if not input_id_busqueda:
-            return html.Div("Por favor, introduce un ID.", style={'color': 'red', 'marginTop': '10px'})
+            return html.Div("Por favor, introduce un ID.", className='modal-error-message')
         incidencia_id = int(input_id_busqueda)
         
-    # Lógica 3: El usuario ha pulsado una tarjeta
     elif isinstance(triggered_id, dict) and triggered_id.get('type') == 'incidencia-card':
-        # Esta lógica más robusta comprueba si algún n_clicks > 0
         if any(n > 0 for n in n_clicks_tarjetas if n is not None):
              incidencia_id = int(triggered_id['index'])
         else:
-             return no_update # No hacer nada si el n_clicks es 0 o None
+             return no_update
     
     if not incidencia_id: 
-        return no_update # No se ha activado ninguna acción válida
+        return no_update
         
-    # --- *** FIN DE LA NUEVA LÓGICA *** ---
-
-    # Si llegamos aquí, tenemos un ID y debemos mostrar los detalles
     detalles = get_detalles_incidencia(int(incidencia_id))
     
     if not detalles['success']:
-        return html.Div(detalles['message'], style={'color': 'red', 'marginTop': '10px'})
+        return html.Div(detalles['message'], className='modal-error-message')
     
     inc = detalles['datos_incidencia']
     cli = detalles['datos_cliente']
     
-    # --- *** INICIO DEL NUEVO LAYOUT (con botón "X") *** ---
     return html.Div([
-        # El nuevo botón "X" para cerrar
         html.Button("X", 
                     id={'type': 'btn-close-details', 'index': inc['id']}, 
                     className='btn-close-details'
@@ -438,11 +394,10 @@ def show_incidencia_details(n_clicks_buscar, n_clicks_tarjetas, n_clicks_cerrar,
                 html.Div([html.Span("Dirección:", className='info-label'), html.Span(cli['direccion'], className='info-value')], className='info-row'),
             ]),
         ]),
-        html.Button('Imprimir Informe (PDF)', id='btn-imprimir', className='btn-primary-custom', style={'marginTop': '20px'}),
-    ], className='search-box', style={'marginTop': '20px', 'borderLeft': '5px solid #667eea'})
-    # --- *** FIN DEL NUEVO LAYOUT *** ---
+        html.Button('Imprimir Informe (PDF)', id='btn-imprimir', className='btn-primary-custom btn-margin-top'),
+    ], className='search-box search-box-highlight', style={'marginTop': '20px'})
 
-# ... (El resto de tus callbacks siguen igual) ...
+
 # Callback 8: Ejecutar Simulación de Detección (Empresa)
 @callback(
     Output('sim-resultado', 'children'),
@@ -453,18 +408,14 @@ def show_incidencia_details(n_clicks_buscar, n_clicks_tarjetas, n_clicks_cerrar,
 )
 def ejecutar_simulacion(n_clicks, cliente_id, cliente_nombre):
     if not cliente_id or not cliente_nombre:
-        return html.P("Por favor, introduce un ID y un Nombre de cliente.", style={'color': 'red'})
+        return html.P("Por favor, introduce un ID y un Nombre de cliente.", className='sim-result-error')
     
     resultado = ejecutar_deteccion_lstm(int(cliente_id), cliente_nombre)
     
-    return html.P(resultado['message'], style={'color': 'green', 'fontWeight': '600'})
+    return html.P(resultado['message'], className='sim-result-success')
 
 
 # --- Callbacks Públicos (Móvil y Verificación) ---
-
-# src/app.py (Solo el Callback 9)
-
-# src/app.py
 
 # Callback 9: Actualizar el Móvil Simulado (Poller)
 @callback(
@@ -476,7 +427,6 @@ def ejecutar_simulacion(n_clicks, cliente_id, cliente_nombre):
 )
 def check_for_notifications(n, cliente_id, notificaciones_actuales, pathname):
     
-    # Solo buscamos notificaciones si estamos en la pantalla principal del móvil
     if 'verificar' in pathname:
         return no_update
 
@@ -484,31 +434,25 @@ def check_for_notifications(n, cliente_id, notificaciones_actuales, pathname):
     
     if not notificaciones_nuevas:
         if n == 0:
-             return html.P("Esperando notificaciones...", style={'padding': '20px', 'color': '#888', 'textAlign': 'center'})
+             return html.P("Esperando notificaciones...", className='mobile-waiting-text')
         else:
             return no_update
         
     cards_nuevas = []
     for notif in notificaciones_nuevas:
         token = notif['link'].split('/')[-1]
-        
-        # --- *** ESTA ES LA LÍNEA MÁGICA (CORREGIDA) *** ---
-        # 1. El link apunta a una sub-ruta del simulador móvil
         link_interno = f"/sim-movil/{cliente_id}/verificar/{token}"
 
         cards_nuevas.append(html.Div([
             html.Div(className='notification-app-title', children=[html.Span('🛡️'), html.Span('GesAI')]),
             html.Span("¡Nueva Alerta de Incidencia!", className='notification-title'),
-            html.P(f"ID #{notif['notificacion_id']}: Se ha detectado una anomalía. Pulsa para verificar.", style={'fontSize': '15px', 'color': '#333', 'margin': '0'}),
+            html.P(f"ID #{notif['notificacion_id']}: Se ha detectado una anomalía. Pulsa para verificar.", className='notification-body'),
             
-            # 2. Usamos dcc.Link. SIN target="_blank"
             dcc.Link("Verificar Ahora", 
                      href=link_interno, 
-                     className='notification-link', 
-                     style={'textDecoration': 'none'}) # Quitar subrayado
+                     className='notification-link')
                      
         ], className='notification-card'))
-        # --- *** FIN DE LA LÍNEA MÁGICA *** ---
         
         marcar_notificacion_leida(notif['notificacion_id'])
 
@@ -528,19 +472,19 @@ def check_for_notifications(n, cliente_id, notificaciones_actuales, pathname):
 def handle_survey_submission(n_clicks, token, respuestas_lista):
     
     if not token:
-        return html.P("Error: Token no encontrado.", style={'color': '#ef4444', 'fontWeight': '600'})
+        return html.P("Error: Token no encontrado.", className='survey-result-error')
     
     if any(r is None for r in respuestas_lista):
-        return html.P("Por favor, responda a todas las 6 preguntas.", style={'color': '#ef4444', 'fontWeight': '600'})
+        return html.P("Por favor, responda a todas las 6 preguntas.", className='survey-result-error')
         
     respuestas_encuesta = {f"pregunta_{i+1}": resp for i, resp in enumerate(respuestas_lista)}
     
     resultado = validar_token_y_registrar(token, respuestas_encuesta)
     
     if resultado['success']:
-        return html.P(resultado['message'], style={'color': 'green', 'background': 'white', 'padding': '10px', 'borderRadius': '8px', 'fontWeight': '600'})
+        return html.P(resultado['message'], className='survey-result-success')
     else:
-        return html.P(resultado['message'], style={'color': '#ef4444', 'background': 'white', 'padding': '10px', 'borderRadius': '8px', 'fontWeight': '600'})
+        return html.P(resultado['message'], className='survey-result-error-inline')
 
 
 # --- 6. EJECUTAR LA APLICACIÓN ---
