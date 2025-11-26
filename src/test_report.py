@@ -1,10 +1,48 @@
-# src/prueba_informe.py
+# prueba_mail
 
+import sys
+import os
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import sys
-import os
+
+# Aseguramos importación correcta
+try:
+    from reports_manager import generar_carta_postal_pdf
+except ImportError:
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from reports_manager import generar_carta_postal_pdf
+
+# 1. Definimos datos de prueba (simulando lo que vendría de la BBDD)
+id_incidencia_test = 99999
+cliente_test = {
+    'cliente_id': 999, # Añadido para que aparezca en el asunto de la carta
+    'nombre': 'Juan Pérez García',
+    'direccion': 'Av. Diagonal 211, 4º 2ª, 08018 Barcelona',
+    # Simulamos que no tenemos contacto digital
+    'telefono': None,
+    'email': None
+}
+
+print("--- Iniciando prueba de generación de CARTA POSTAL ---")
+
+# 2. Llamamos a la función directamente
+try:
+    ruta_generada = generar_carta_postal_pdf(id_incidencia_test, cliente_test)
+
+    # 3. Verificamos el resultado
+    if ruta_generada:
+        print(f"\n✅ ¡ÉXITO! La Carta PDF se ha generado correctamente.")
+        print(f"📂 Búscalo aquí: {ruta_generada}")
+        print("   (Verifica que el logo y el enlace de contacto aparecen bien)")
+    else:
+        print("\n❌ ERROR: No se pudo generar el PDF. Revisa los logs de error arriba.")
+
+except Exception as e:
+    print(f"\n❌ EXCEPCIÓN: {e}")
+    
+    
+# prueba_informe
 
 # Aseguramos que pueda importar reports_manager si se ejecuta desde src/
 try:
