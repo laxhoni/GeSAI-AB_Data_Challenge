@@ -285,7 +285,7 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     nombre = cliente.get('nombre', 'Estimado Cliente')
     direccion = cliente.get('direccion', 'Adreça Desconeguda')
     
-    pdf.multi_cell(85, 5, f"{nombre}\n{direccion}\n08xxx Barcelona", 0, 'L')
+    pdf.multi_cell(85, 5, f"{nombre}\n{direccion}\n", 0, 'L')
     
     pdf.ln(30) # Espacio tras la dirección
     
