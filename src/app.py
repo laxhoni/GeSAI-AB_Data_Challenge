@@ -56,12 +56,9 @@ def incidencia_card(inc):
         color = '#EF4444'
     elif 'MODERADA' in st:
         color = '#F59E0B'
-    elif 'LEVE' in st:
-        color = '#10B981'
 
     extra = ' 📮' if 'CARTA' in ver else ''
 
-    badge_class = 'badge-leve'
     if 'GRAVE' in st:
         badge_class = 'badge-grave'
     elif 'MODERADA' in st:
@@ -228,7 +225,6 @@ def build_empresa_layout(session_data):
                     html.Button('Todas', id={'type': 'filtro-btn', 'index': 'todas'}, className='filter active', n_clicks=0),
                     html.Button('Grave', id={'type': 'filtro-btn', 'index': 'Grave'}, className='filter', n_clicks=0),
                     html.Button('Moderada', id={'type': 'filtro-btn', 'index': 'Moderada'}, className='filter', n_clicks=0),
-                    html.Button('Leve', id={'type': 'filtro-btn', 'index': 'Leve'}, className='filter', n_clicks=0),
                     html.Button('Carta', id={'type': 'filtro-btn', 'index': 'CARTA'}, className='filter', n_clicks=0)
                 ])
             ])
@@ -338,14 +334,12 @@ def refresh_dashboard(n, filtro):
     total = len(todas)
     graves = sum('GRAVE' in str(i.get('estado', '')).upper() for i in todas)
     moderadas = sum('MODERADA' in str(i.get('estado', '')).upper() for i in todas)
-    leves = sum('LEVE' in str(i.get('estado', '')).upper() for i in todas)
     cartas = sum('CARTA' in str(i.get('verificacion', '')).upper() for i in todas)
 
     stats = html.Div(className='kpi-grid', children=[
         kpi_card('Incidencias Activas', total, '📊'),
         kpi_card('Fugas Graves', graves, '🚨'),
         kpi_card('Fugas Moderadas', moderadas, '⚠️'),
-        kpi_card('Fugas Leves', leves, '💧'),
         kpi_card('Cartas por Enviar', cartas, '📮')
     ])
 
@@ -369,7 +363,7 @@ def update_filter(n):
         raise PreventUpdate
 
     # opciones fijas (orden fijo)
-    options = ['todas', 'Grave', 'Moderada', 'Leve', 'CARTA']
+    options = ['todas', 'Grave', 'Moderada', 'CARTA']
     triggered = ctx.triggered_id
 
     if not triggered:
