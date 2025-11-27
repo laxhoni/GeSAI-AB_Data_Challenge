@@ -1,174 +1,242 @@
 # src/motor_gesai.py
 
-"""
-Este es el "Cerebro" del proyecto (Motor GeSAI).
-Contiene toda la lógica de negocio, acceso a BBDD y modelos de IA.
-NO debe contener NADA de Dash (html, dcc, callbacks).
-"""
+import sqlite3
+import os
+import time
+import random
+import pandas as pd
+import numpy as np
+import joblib
+from faker import Faker
+from reports_manager import generar_carta_postal_pdf, generar_informe_tecnico_pdf
 
-# --- MOCKS DE BASE DE DATOS (El Equipo Core AI debe implementar esto) ---
+# --- 1. CONFIGURACIÓN ---
+DB_NAME = 'gesai.db'
+MODELOS_DIR = '../data/processed-data/'
 
-# Mock de la tabla de usuarios
-MOCK_USUARIOS_DB = {
-    "empresa@gesai.com": {"contrasena": "1234", "rol": "Empresa", "nombre": "Jhonatan Barcos"}
-    # No hay más usuarios "Cliente"
-}
+# Umbrales de Negocio
+UMBRAL_SEGURIDAD = 0.30
+UMBRAL_ALERTA = 0.70
+UMBRAL_CRITICO = 0.85
+TENDENCIA_RAPIDA = 0.05
+TENDENCIA_ESTRUCTURAL = 0.15
 
-# Mock de la tabla de incidencias
-MOCK_INCIDENCIAS_DB = [
-    {'id': 101, 'cliente_id': 50, 'cliente_nombre': 'Oscar Sanz', 'fecha': '31/10/2025', 'estado': 'Grave', 'verificacion': 'PENDIENTE', 'descripcion': 'Anomalía detectada en patrón de consumo'},
-    {'id': 102, 'cliente_id': 51, 'cliente_nombre': 'María García', 'fecha': '31/10/2025', 'estado': 'Moderada', 'verificacion': 'PENDIENTE', 'descripcion': 'Variación inusual en horario nocturno'},
-]
+# Eliminamos Criptografía
+faker = Faker('es_ES')
 
-# Mock de la tabla de notificaciones (para el simulador de móvil)
-MOCK_NOTIFICACIONES_DB = []
+modelos_ia = {}
+features_modelo = []
 
-# Mock de la tabla de tokens de verificación
-MOCK_TOKENS_DB = {} # Ej: {"aB12cDe3fG4h": 105}
+# --- 2. INICIALIZACIÓN ---
+def inicializar_motor():
+    global modelos_ia, features_modelo
+    print("--- INICIALIZANDO MOTOR GeSAI ---")
+    try:
+        modelos_ia['HOY'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_HOY.joblib'))
+        modelos_ia['MANANA'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_MANANA.joblib'))
+        modelos_ia['7DIAS'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_7DIAS.joblib'))
+        features_modelo = modelos_ia['HOY'].booster_.feature_name()
+        print("✅ Modelos LightGBM cargados.")
+    except Exception as e:
+        print(f"⚠️ ERROR modelos: {e}. Fallback activo.")
+        modelos_ia = None
 
+inicializar_motor()
 
-# --- CONTRATO 1: USUARIOS ---
+def _conectar_bbdd():
+    path = DB_NAME if os.path.exists(DB_NAME) else f"../{DB_NAME}"
+    try:
+        conn = sqlite3.connect(path, check_same_thread=False)
+        conn.execute("PRAGMA foreign_keys = 1")
+        conn.row_factory = sqlite3.Row 
+        return conn
+    except: return None
 
-def verificar_credenciales(usuario: str, contrasena: str) -> dict:
-    """Verifica un usuario (solo empresa) y contraseña."""
-    print(f"MOCK: verificando credenciales para usuario={usuario}")
-    if usuario in MOCK_USUARIOS_DB and MOCK_USUARIOS_DB[usuario]["contrasena"] == contrasena:
-        user_data = MOCK_USUARIOS_DB[usuario]
-        return {'success': True, 'rol': user_data['rol'], 'nombre': user_data['nombre']}
+def _aplicar_reglas(p_hoy, p_manana, p_7dias):
+    delta_corto = p_manana - p_hoy
+    delta_largo = p_7dias - p_hoy
+    
+    if p_hoy < UMBRAL_SEGURIDAD: return "No Fuga", ""
+    if p_hoy < UMBRAL_ALERTA:
+        if delta_largo > TENDENCIA_ESTRUCTURAL: return "Fuga Leve (Tendencia)", f"Tendencia +{delta_largo:.1%}"
+        return "No Fuga", "Riesgo bajo"
+    if p_hoy < UMBRAL_CRITICO:
+        if delta_corto > TENDENCIA_RAPIDA or delta_largo > TENDENCIA_ESTRUCTURAL: return "Fuga Grave (En Crecimiento)", "Crecimiento rápido"
+        return "Fuga Moderada", "Estable"
+    return "Fuga Grave", "Crítica"
+
+def _obtener_historico_simulado(cliente_id):
+    """Genera histórico visual para el PDF."""
+    fechas = pd.date_range(end=pd.Timestamp.now(), periods=24*30, freq='h')
+    consumos = np.random.normal(loc=20, scale=5, size=len(fechas))
+    return pd.DataFrame({'FECHA_HORA': fechas, 'CONSUMO_REAL': consumos})
+
+# --- 4. FUNCIÓN DE DETECCIÓN (Acepta datos ordenados) ---
+def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = None) -> dict:
+    """
+    Procesa una lectura. 
+    Si 'datos_externos' está presente (viene del backend ordenado), usa esos datos reales.
+    Si no, usa aleatorios (fallback).
+    """
+    X_input = None
+    origen_datos = "Simulado"
+    
+    # 1. Preparar Datos Reales del Backend
+    if datos_externos is not None and modelos_ia:
+        try:
+            # Convertir la Serie (fila) a DataFrame
+            fila = pd.DataFrame([datos_externos])
+            
+            # Filtrar solo las columnas que el modelo necesita (quitamos fechas y IDs)
+            cols_validas = [c for c in features_modelo if c in fila.columns]
+            X_input = fila[cols_validas].copy()
+            
+            # Limpieza de tipos obligatoria
+            CAT = ['US_AIGUA_SUBM', 'TIPO_DIA']
+            for c in X_input.columns:
+                if c in CAT: X_input[c] = X_input[c].astype('category')
+                else: X_input[c] = pd.to_numeric(X_input[c], errors='coerce').fillna(0.0)
+            
+            origen_datos = "Lectura Real IoT"
+        except Exception as e:
+            print(f"Error procesando datos externos: {e}")
+            X_input = None
+    
+    # 2. Predicción
+    if modelos_ia and X_input is not None:
+        try:
+            p_hoy = modelos_ia['HOY'].predict_proba(X_input, raw_score=False)[:, 1][0]
+            p_man = modelos_ia['MANANA'].predict_proba(X_input, raw_score=False)[:, 1][0]
+            p_7d = modelos_ia['7DIAS'].predict_proba(X_input, raw_score=False)[:, 1][0]
+        except: p_hoy, p_man, p_7d = 0.1, 0.1, 0.1
     else:
-        return {'success': False, 'message': 'Usuario o contraseña incorrectos'}
+        # Fallback aleatorio
+        p_hoy = random.random()
+        p_man, p_7d = p_hoy, p_hoy
 
-# --- CONTRATO 2: LÓGICA DE EMPRESA ---
-
-def get_lista_incidencias_activas(tipo_filtro: str = "todas") -> list[dict]:
-    """Obtiene una lista de todas las incidencias de la BBDD."""
-    print(f"MOCK BBDD: get_lista_incidencias_activas(filtro={tipo_filtro})")
+    # 3. Clasificación
+    estado, detalle = _aplicar_reglas(p_hoy, p_man, p_7d)
     
-    if tipo_filtro == "todas":
-        return MOCK_INCIDENCIAS_DB
-    else:
-        return [inc for inc in MOCK_INCIDENCIAS_DB if inc['estado'] == tipo_filtro]
+    if "No Fuga" in estado: 
+        return {'status': 'OK', 'message': f'Lectura normal ({p_hoy:.1%})'}
 
-def get_detalles_incidencia(incidencia_id: int) -> dict:
-    """Obtiene toda la información detallada de una única incidencia."""
-    print(f"MOCK BBDD: get_detalles_incidencia(id={incidencia_id})")
-    
-    # Simulación de búsqueda en BBDD
-    for inc in MOCK_INCIDENCIAS_DB:
-        if inc['id'] == incidencia_id:
-            # (En la app real, aquí harías un JOIN con la tabla de clientes)
-            mock_cliente_data = {
-                101: {'nombre': 'Oscar Sanz', 'telefono': '600123456', 'email': 'cliente@gesai.com', 'direccion': 'Calle Ficticia 123, Barcelona'},
-                102: {'nombre': 'María García', 'telefono': '600987654', 'email': 'maria@email.com', 'direccion': 'Avenida Ejemplo 45, L\'Hospitalet'},
-                105: {'nombre': 'Cliente Nuevo', 'telefono': '600111222', 'email': 'nuevo@email.com', 'direccion': 'Plaza Simulada 1'}
-            }
-            return {
-                'success': True,
-                'datos_incidencia': inc,
-                'datos_cliente': mock_cliente_data.get(inc['id'], {'nombre': 'Desconocido'})
-            }
-            
-    return {'success': False, 'message': f'Incidencia con ID {incidencia_id} no encontrada.'}
-
-def ejecutar_deteccion_lstm(cliente_id: int, cliente_nombre: str) -> dict:
-    """
-    Ejecuta el modelo de detección de LSTM para un cliente específico.
-    Si detecta algo, crea una nueva incidencia Y UNA NOTIFICACIÓN PUSH.
-    """
-    print(f"MOCK IA: ejecutando detección para cliente_id={cliente_id}")
-    
-    # --- SIMULACIÓN DE DETECCIÓN ---
-    # 1. Crear nueva incidencia en la BBDD
-    nueva_incidencia_id = len(MOCK_INCIDENCIAS_DB) + 100
-    nueva_incidencia = {
-        'id': nueva_incidencia_id,
-        'cliente_id': cliente_id,
-        'cliente_nombre': cliente_nombre,
-        'fecha': '31/10/2025',
-        'estado': 'Grave',
-        'verificacion': 'PENDIENTE',
-        'descripcion': 'Detección simulada por IA'
-    }
-    MOCK_INCIDENCIAS_DB.append(nueva_incidencia)
-    print(f"MOCK BBDD: Nueva incidencia creada: {nueva_incidencia}")
-
-    # 2. Crear un token de verificación único
-    token = f"token_para_incidencia_{nueva_incidencia_id}"
-    MOCK_TOKENS_DB[token] = nueva_incidencia_id
-    
-    # 3. Crear el link y el mensaje
-    link_verificacion = f"http://127.0.0.1:8050/verificar/{token}"
-    mensaje_sms = f"Hola {cliente_nombre}, somos GeSAI. Hemos detectado una anomalía (ID: {nueva_incidencia_id}). Por favor, pulsa aquí para verificar: {link_verificacion}"
-
-    # 4. ESCRIBIR EN LA BBDD DE NOTIFICACIONES (para el móvil)
-    nueva_notificacion = {
-        'notificacion_id': len(MOCK_NOTIFICACIONES_DB) + 1,
-        'cliente_id': cliente_id,
-        'mensaje': mensaje_sms,
-        'link': link_verificacion,
-        'leida': False
-    }
-    MOCK_NOTIFICACIONES_DB.append(nueva_notificacion)
-    print(f"MOCK BBDD: Nueva notificación PUSH guardada: {nueva_notificacion}")
-    
-    return {'status': 'ALERTA', 'message': f'¡Detección! Incidencia #{nueva_incidencia_id} creada y notificación enviada.'}
-
-
-# --- CONTRATO 3: LÓGICA PÚBLICA (Móvil y Verificación) ---
-
-def get_notificaciones_pendientes_cliente(cliente_id: int) -> list[dict]:
-    """
-    Es llamada CADA 3 SEGUNDOS por el simulador de móvil.
-    Busca en la BBDD si hay notificaciones no leídas para ese cliente.
-    """
-    print(f"MOCK BBDD: El móvil del cliente {cliente_id} está pidiendo notificaciones...")
-    
-    notificaciones_no_leidas = []
-    for notif in MOCK_NOTIFICACIONES_DB:
-        if notif['cliente_id'] == cliente_id and notif['leida'] == False:
-            notificaciones_no_leidas.append(notif)
-            
-    return notificaciones_no_leidas
-
-def marcar_notificacion_leida(notificacion_id: int):
-    """
-Recibe el ID de la notificación (no de la incidencia) y la marca como leída."""
-    print(f"MOCK BBDD: Marcando notificación {notificacion_id} como leída.")
-    for notif in MOCK_NOTIFICACIONES_DB:
-        if notif['notificacion_id'] == notificacion_id:
-            notif['leida'] = True
-            break
-    return True
-
-def validar_token_y_registrar(token: str, respuestas_encuesta: dict) -> dict:
-    """
-    Valida un token de la URL y registra la encuesta completa del cliente.
-    """
-    print(f"MOCK BBDD: Validando token {token} con respuestas {respuestas_encuesta}")
-    
-    # 1. Validar el token
-    if token not in MOCK_TOKENS_DB:
-        return {'success': False, 'message': 'Token no válido o expirado.'}
+    # 4. BBDD
+    conn = _conectar_bbdd()
+    if not conn: return {'status': 'ERROR'}
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM clientes WHERE cliente_id = ?", (str(cliente_id),))
+        res = cur.fetchone()
         
-    incidencia_id = MOCK_TOKENS_DB[token]
-    
-    # 2. Actualizar la BBDD de Incidencias
-    encontrada = False
-    for inc in MOCK_INCIDENCIAS_DB:
-        if inc['id'] == incidencia_id:
-            # En la BBDD real, guardarías las 6 respuestas.
-            # Aquí, solo actualizamos el estado de verificación.
-            inc['verificacion'] = f"VERIFICADO (Encuesta Recibida)"
-            encontrada = True
-            break
-            
-    if not encontrada:
-        return {'success': False, 'message': 'Incidencia asociada no encontrada.'}
+        if not res:
+            # Crear cliente dummy si llega un ID nuevo
+            nom = faker.name()
+            email = f"{nom.split()[0]}@test.com"
+            cur.execute("INSERT INTO clientes VALUES (?, ?, ?, ?, ?)", (str(cliente_id), nom, "600", email, "Barcelona"))
+            datos_cli = {'nombre': nom, 'email': email, 'direccion': "Barcelona"}
+        else:
+            datos_cli = dict(res)
+            # Asegurar nulos
+            if datos_cli['email'] == 'None' or datos_cli['email'] == '': datos_cli['email'] = None
+
+        desc = f"{estado}. Prob: {p_hoy:.0%}. {detalle}"
+        cur.execute("INSERT INTO incidencias (cliente_id, estado, verificacion, descripcion) VALUES (?, ?, ?, ?)",
+                    (str(cliente_id), estado, 'PENDIENTE', desc))
+        new_id = cur.lastrowid
+
+        # Acciones
+        tiene_email = (datos_cli['email'] is not None)
+        msg_extra = ""
         
-    # 3. Borrar el token
-    del MOCK_TOKENS_DB[token]
-    
-    # Puedes ver las respuestas del servidor
-    print(f"RESPUESTAS RECIBIDAS: {respuestas_encuesta}")
-    
-    return {'success': True, 'message': f'¡Gracias! Su encuesta ha sido registrada para la incidencia #{incidencia_id}'}
+        if "Leve" not in estado:
+            if not tiene_email:
+                generar_carta_postal_pdf(new_id, datos_cli)
+                cur.execute("UPDATE incidencias SET verificacion = 'CARTA ENVIADA' WHERE id = ?", (new_id,))
+                msg_extra = "Carta Generada"
+            else:
+                token = f"tk_{new_id}_{int(time.time())}"
+                link = f"http://127.0.0.1:8050/verificar/{token}"
+                msg = f"Hola {datos_cli['nombre']}, alerta GeSAI: {estado}."
+                cur.execute("INSERT INTO tokens_verificacion (token, incidencia_id) VALUES (?, ?)", (token, new_id))
+                cur.execute("INSERT INTO notificaciones (cliente_id, mensaje, link) VALUES (?, ?, ?)", (str(cliente_id), msg, link))
+                msg_extra = "Push Enviado"
+
+        # Generar informe técnico siempre
+        historico = _obtener_historico_simulado(cliente_id)
+        datos_inc_pdf = {'estado': estado, 'descripcion': desc, 'prob_hoy': p_hoy}
+        generar_informe_tecnico_pdf(new_id, datos_cli, datos_inc_pdf, historico)
+
+        conn.commit()
+        return {'status': 'ALERTA', 'message': f"{estado} - {msg_extra}"}
+    finally:
+        conn.close()
+
+# --- FUNCIONES LECTURA APP (Sin Cripto) ---
+def verificar_credenciales(u, p):
+    conn = _conectar_bbdd()
+    try:
+        cur = conn.cursor()
+        # Login simple: Texto plano
+        cur.execute("SELECT * FROM usuarios_empresa WHERE email = ?", (u,))
+        row = cur.fetchone()
+        if row and row['contrasena'] == p: 
+            return {'success': True, 'rol': 'Empresa', 'nombre': row['nombre']}
+    finally: conn.close()
+    return {'success': False, 'message': 'Credenciales incorrectas'}
+
+def get_lista_incidencias_activas(filtro="todas"):
+    conn = _conectar_bbdd()
+    try:
+        sql = "SELECT i.*, c.nombre as cliente_nombre FROM incidencias i JOIN clientes c ON i.cliente_id = c.cliente_id"
+        if filtro != "todas": sql += f" WHERE i.estado LIKE '%{filtro}%'"
+        sql += " ORDER BY i.id DESC LIMIT 50"
+        cur = conn.cursor()
+        cur.execute(sql)
+        return [dict(r) for r in cur.fetchall()]
+    finally: conn.close()
+
+def get_detalles_incidencia(id):
+    conn = _conectar_bbdd()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM incidencias WHERE id=?", (id,))
+        inc = cur.fetchone()
+        if not inc: return {'success': False}
+        cur.execute("SELECT * FROM clientes WHERE cliente_id=?", (inc['cliente_id'],))
+        cli = cur.fetchone()
+        
+        datos_inc = dict(inc)
+        # Intenta parsear probabilidad del texto
+        import re
+        match = re.search(r"Prob: (\d+)", inc['descripcion'])
+        prob = float(match.group(1))/100 if match else 0.9
+        datos_inc['prob_hoy'] = prob
+        
+        return {'success': True, 'datos_incidencia': datos_inc, 'datos_cliente': dict(cli) if cli else {}}
+    finally: conn.close()
+
+def get_notificaciones_pendientes_cliente(cid):
+    conn = _conectar_bbdd()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM notificaciones WHERE cliente_id=? AND leida=0", (str(cid),))
+        return [dict(r) for r in cur.fetchall()]
+    finally: conn.close()
+
+def marcar_notificacion_leida(nid):
+    conn = _conectar_bbdd()
+    try: conn.execute("UPDATE notificaciones SET leida=1 WHERE notificacion_id=?", (nid,)); conn.commit()
+    finally: conn.close()
+
+def validar_token_y_registrar(token, respuestas):
+    conn = _conectar_bbdd()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT incidencia_id FROM tokens_verificacion WHERE token=?", (token,))
+        row = cur.fetchone()
+        if not row: return {'success': False, 'message': 'Token inválido'}
+        cur.execute("UPDATE incidencias SET verificacion='VERIFICADO (Encuesta)' WHERE id=?", (row['incidencia_id'],))
+        cur.execute("DELETE FROM tokens_verificacion WHERE token=?", (token,))
+        conn.commit()
+        return {'success': True, 'message': 'OK'}
+    finally: conn.close()

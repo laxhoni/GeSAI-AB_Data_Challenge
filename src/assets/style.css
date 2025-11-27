@@ -1,521 +1,456 @@
-/* src/assets/styles.css */
+/* =======================================================
+   GeSAI - Enterprise UI (Big Four look & feel)
+   Minimalista • Espacio • Tipografía Inter • CSS Variables
+   ======================================================= */
 
-/* --- Importar Fuente --- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* --- Estilos Globales --- */
-body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+:root{
+    /* Paleta */
+    --primary: #0072BC;
+    --primary-600: #005a96;
+    --bg-page: #F8FAFC;        /* solicitado */
+    --card-bg: #FFFFFF;
+    --text-title: #1E293B;     /* slate oscuro */
+    --text-sub: #64748B;
+    --border: #E6EEF6;
+    --muted: #94A3B8;
+    --danger: #F87171;         /* rojo suave */
+    --warn: #F59E0B;           /* naranja */
+    --success: #10B981;
+    --glass: rgba(255,255,255,0.6);
+
+    /* Shadows & radii */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --shadow-xs: 0 1px 2px rgba(16,24,40,0.04);
+    --shadow-sm: 0 6px 16px rgba(16,24,40,0.06);
+    --shadow-md: 0 10px 30px rgba(16,24,40,0.08);
+    --transition-fast: 180ms cubic-bezier(.2,.9,.2,1);
 }
 
-/* --- Clases de Ayuda (Helpers) --- */
-.layout-flex-center {
+/* Base */
+* { box-sizing: border-box; }
+html,body,#__dash_app__ { height: 100%; }
+body{
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, "Helvetica Neue", Arial;
+    background: var(--bg-page);
+    color: var(--text-title);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.45;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Utility layout */
+.container-centered {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
+/* ---------- LOGIN ---------- */
+.login-wrapper {
+    min-height: 100vh;
     display: flex;
     align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: linear-gradient(180deg, rgba(0,114,188,0.06) 0%, rgba(0,114,188,0.02) 100%);
 }
-.btn-full-width {
+
+.login-card {
     width: 100%;
-}
-.btn-margin-top {
-    margin-top: 20px;
-}
-.text-align-right {
-    text-align: right;
-}
-.error-message-centered {
-    text-align: center;
-    margin-top: 50px;
+    max-width: 520px;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 48px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
+.login-brand {
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom: 6px;
+}
 
-/* --- Estilos del Login --- */
-.login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.login-card { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); padding: 50px; max-width: 450px; width: 100%; }
-.logo-container { text-align: center; margin-bottom: 40px; }
 .logo-login {
-    height: 90px;
+    height: 56px;
     width: auto;
-    margin-bottom: 20px;
+    display:block;
 }
-.app-title { font-size: 36px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
-.app-subtitle { color: #6b7280; font-size: 14px; margin-top: 8px; }
+
+.app-subtitle {
+    color: var(--text-sub);
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Form */
+.form-row { display: flex; flex-direction: column; gap:8px; }
 .form-label {
-    font-weight: 500;
-    margin-bottom: 8px;
-    display: block;
-    color: #374151;
+    font-size: 13px;
+    color: var(--text-title);
+    font-weight: 600;
 }
 .form-input {
-    width: 100%;
+    height:44px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 14px;
+    color: var(--text-title);
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 4px 18px rgba(0,114,188,0.08);
+}
+
+/* Primary button */
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
     padding: 12px 16px;
     border-radius: 10px;
-    border: 1px solid #d1d5db;
-    font-size: 14px;
-    margin-bottom: 20px;
-    box-sizing: border-box; 
-}
-.login-error-message {
-    margin-bottom: 15px;
-    color: red;
-}
-.login-divider {
-    margin: 30px 0;
-    border-color: #e5e7eb;
-}
-.login-test-info {
-    font-size: 12px;
-    color: #6b7280;
-    text-align: center;
-}
-
-
-/* --- Estilos del Dashboard (Header) --- */
-.header-dashboard { 
-    background: white; 
-    border-bottom: 1px solid #e5e7eb; 
-    padding: 20px 40px; 
-    position: sticky; 
-    top: 0; 
-    z-index: 100; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    /* Estils afegits: */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.logo-dashboard {
-    height: 45px;
-    width: auto;
-    margin-right: 15px;
-}
-.dashboard-title {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-}
-.user-info-badge {
-    padding: 10px 20px;
-    background: #eff6ff;
-    border-radius: 10px;
-    margin-right: 15px;
-}
-.user-info-icon {
-    margin-right: 8px;
-}
-.user-info-name {
-    font-weight: 600;
-    color: #374151;
-}
-
-/* --- Contenido Principal del Dashboard --- */
-.main-content-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-.stats-container-spacing {
-    margin-bottom: 30px;
-}
-.stat-card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; transition: transform 0.2s, box-shadow 0.2s; }
-.stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
-.stat-card-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.stat-number { font-size: 42px; font-weight: 700; line-height: 1; }
-.stat-number.total { color: #3b82f6; }
-.stat-number.grave { color: #dc2626; }
-.stat-number.moderada { color: #d97706; }
-.stat-number.leve { color: #059669; }
-.stat-label { color: #6b7280; font-size: 14px; font-weight: 500; margin-top: 5px; }
-.stat-icon {
-    font-size: 40px;
-}
-
-/* --- Estilos de Incidencias (Tarjetas y Badges) --- */
-.incidencia-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid #e5e7eb; transition: all 0.2s; cursor: pointer; }
-.incidencia-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.1); border-left: 5px solid #667eea; }
-.incidencia-description {
-    color: #374151;
-    margin: 10px 0;
-}
-.incidencia-verification-status {
-    color: #6b7280;
-}
-.empty-list-message {
-    text-align: center;
-    margin-top: 30px;
-    color: #6b7280;
-}
-
-.badge-grave { background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #fecaca; }
-.badge-moderada { background: #fef3c7; color: #d97706; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #fde68a; }
-.badge-leve { background: #d1fae5; color: #059669; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #a7f3d0; }
-
-/* --- Estilos de Botones y Filtros --- */
-.btn-primary-custom { 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-    border: none; 
-    border-radius: 10px; 
-    padding: 12px 24px; 
-    color: white; 
-    font-weight: 600; 
-    transition: all 0.3s; 
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); 
-    font-size: 15px; /* Propietat afegida */
-    cursor: pointer; /* Propietat afegida */
-}
-.btn-primary-custom:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
-
-.btn-logout {
-    padding: 10px 20px;
-    background: #fee2e2;
-    color: #dc2626;
     border: none;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform var(--transition-fast), background var(--transition-fast);
+}
+.btn-primary:hover { transform: translateY(-2px); background: var(--primary-600); }
+
+/* Small muted area */
+.login-footer-note {
+    font-size: 13px;
+    color: var(--text-sub);
+    text-align:center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #FBFDFF;
+    border: 1px dashed var(--border);
+}
+
+/* ---------- DASHBOARD HEADER ---------- */
+.header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    box-shadow: var(--shadow-xs);
+}
+
+.header-left { display:flex; align-items:center; gap:12px; }
+.header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-title);
+    margin: 0;
+}
+.header-sub {
+    color: var(--text-sub);
+    font-size: 13px;
+}
+
+/* user area */
+.header-actions { display:flex; align-items:center; gap:12px; }
+.user-pill {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    background:#F7FAFC;
+    border-radius: 999px;
+    font-weight:600;
+    color:var(--text-title);
+    border: 1px solid var(--border);
+    font-size:14px;
+}
+.btn-logout {
+    padding: 8px 12px;
     border-radius: 10px;
+    border: 1px solid rgba(240, 100, 100, 0.12);
+    background: #fff;
+    color: var(--danger);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
 }
-.btn-logout:hover {
-    background: #fecaca;
-    transform: translateY(-2px);
+.btn-logout:hover { background: rgba(255,240,240,0.9); }
+
+/* ---------- PAGE LAYOUT ---------- */
+.page-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+    padding: 28px 20px;
+    max-width: 1280px;
+    margin: 0 auto;
 }
 
-.search-box { 
-    background: white; 
-    border-radius: 12px; 
-    padding: 25px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-    border: 1px solid #e5e7eb; 
-    margin-bottom: 20px; 
-    position: relative; /* Afegit per al botó 'X' */
-}
-.search-box-highlight {
-    border-left: 5px solid #667eea;
+/* Left column (KPIs + filters) */
+.left-column {
+    display:flex;
+    flex-direction:column;
+    gap:18px;
 }
 
-.search-bar-container {
-    display: flex;
-    margin-bottom: 20px;
+/* Right column (incidences list) */
+.right-column {
+    display:flex;
+    flex-direction:column;
+    gap:18px;
 }
-.search-input-flex {
-    flex: 1;
-    padding: 12px 16px;
+
+/* Cards container */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+}
+
+/* ---------- KPI CARDS ---------- */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+.kpi {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding: 18px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+}
+.kpi-label { color: var(--text-sub); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.6px; }
+.kpi-value { font-weight:800; font-size:30px; color:var(--text-title); }
+
+/* Icon small */
+.kpi-icon { font-size:20px; opacity:0.85; }
+
+/* ---------- FILTERS ---------- */
+.filter-row {
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+.filter-label { color:var(--text-sub); font-weight:600; margin-right:6px; }
+
+/* filter button style (outline vs active) */
+.filter {
+    background: #FFF;
     border-radius: 10px;
-    border: 1px solid #d1d5db;
-    margin-right: 10px;
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    font-weight:600;
+    color:var(--text-title);
+    cursor:pointer;
+    transition: all var(--transition-fast);
 }
-.form-input-full {
-    width: 100%;
-    padding: 12px 16px;
+.filter:hover { transform: translateY(-2px); box-shadow: var(--shadow-xs); }
+.filter.active {
+    background: linear-gradient(90deg,var(--primary),var(--primary-600));
+    color: #fff;
+    border-color: transparent;
+}
+
+/* ---------- INCIDENT CARD LIST ---------- */
+.list-empty {
+    padding:24px;
+    color:var(--text-sub);
+    text-align:center;
+}
+
+/* Incidence card */
+.incidencia {
+    display:flex;
+    gap:16px;
+    padding: 18px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    cursor: pointer;
+}
+.incidencia:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); border-color: rgba(0,114,188,0.08); }
+
+/* Left color bar indicates severity */
+.incidencia-severity {
+    width:8px;
+    border-radius: 6px;
+    flex-shrink:0;
+}
+.incidencia-body { flex:1; display:flex; flex-direction:column; gap:8px; }
+
+/* title row */
+.incidencia-title-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+.incidencia-title {
+    font-weight:700;
+    font-size:15px;
+    color:var(--text-title);
+}
+.incidencia-badge {
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:11px;
+    text-transform:uppercase;
+}
+
+/* severity colors (píldoras suaves) */
+.badge-grave { background: #FFF5F5; color: #B91C1C; border:1px solid rgba(240, 40, 40, 0.08); }
+.badge-moderada { background: #FFFBF1; color: #92400E; border:1px solid rgba(245, 158, 11, 0.08); }
+.badge-leve { background: #F6FEF8; color: #065F46; border:1px solid rgba(16,185,129,0.06); }
+
+.incidencia-desc { color: #475569; font-size:14px; margin:0; line-height:1.4; }
+.incidencia-meta { color: var(--muted); font-size:13px; }
+
+/* ---------- DETAILS PANEL (Modal-ish) ---------- */
+.details-panel {
+    position: sticky;
+    top: 24px;
+    background: linear-gradient(180deg,#fff,#fbfdff);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* close button */
+.btn-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size:20px;
+}
+.btn-close:hover { color: var(--danger); }
+
+/* primary full-width action */
+.btn-block {
+    display:block;
+    width:100%;
+    padding:12px;
     border-radius: 10px;
-    border: 1px solid #d1d5db;
-    font-size: 14px;
-    box-sizing: border-box; 
+    border:none;
+    background: var(--primary);
+    color:#fff;
+    font-weight:700;
+    cursor:pointer;
 }
-.filter-label {
-    margin-right: 15px;
-    font-weight: 600;
-    color: #374151;
-}
+.btn-block:hover { background: var(--primary-600); transform: translateY(-2px); }
 
-.filter-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid #e5e7eb; background: white; margin-right: 10px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
-.filter-btn:hover { background: #f3f4f6; border-color: #667eea; }
-.filter-btn-active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea; }
-
-/* --- Estils de Simulació i Resultats --- */
-.sim-result-spacing {
-    margin-top: 15px;
-}
-.sim-result-error {
-    color: red;
-}
-.sim-result-success {
-    color: green;
-    font-weight: 600;
-}
-.modal-error-message {
-    color: red;
-    margin-top: 10px;
-}
-
-
-/* --- Estilos de Detalles y Verificación --- */
-.verification-page-container {
-    max-width: 800px;
-    margin: 50px auto;
-    padding: 20px;
-}
-.verification-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 40px; color: white; text-align: center; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); }
-.info-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #e5e7eb; }
-.info-label { color: #6b7280; font-weight: 500; }
-.info-value { color: #111827; font-weight: 600; }
-
-/* --- NUEVO: Estilos del Simulador de Móvil Realista --- */
+/* ---------- MOBILE SIMULATOR ---------- */
 .mobile-frame {
-    width: 390px; /* Ancho de un iPhone 13/14 */
-    height: 844px; /* Alto de un iPhone 13/14 */
-    background: #111;
-    border-radius: 60px; /* Bordes redondeados del teléfono */
-    padding: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 2px #333;
-    margin: 40px auto;
-    /* Botones laterales simulados */
-    position: relative;
+    width: 380px;
+    height: 820px;
+    margin: 22px auto;
+    border-radius: 44px;
+    background: #111111;
+    padding: 14px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    border: 6px solid #0b0b0b;
 }
-
-.mobile-frame::before {
-    content: '';
-    position: absolute;
-    left: -4px;
-    top: 100px;
-    width: 3px;
-    height: 30px;
-    background: #333;
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
-}
-.mobile-frame::after {
-    content: '';
-    position: absolute;
-    right: -4px;
-    top: 140px;
-    width: 3px;
-    height: 60px;
-    background: #333;
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
-}
-
 .mobile-screen {
     width: 100%;
     height: 100%;
-    background: #ffffff;
-    border-radius: 48px; /* Bordes redondeados de la pantalla */
+    background: linear-gradient(180deg,#fff,#f8f9fb);
+    border-radius: 36px;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: relative; /* Para la "isla" */
+    display:flex;
+    flex-direction:column;
 }
-
-.mobile-island {
-    position: absolute;
-    top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 130px;
+.mobile-notch {
     height: 30px;
-    background: #111;
-    border-radius: 20px;
-    z-index: 10;
+    display:block;
+    margin: 6px auto;
+    width: 110px;
+    background:#0b0b0b;
+    border-radius: 16px;
+    opacity:0.85;
 }
 
+/* header inside mobile */
 .mobile-header {
-    padding: 15px;
-    padding-top: 55px; /* Dejar espacio para la isla */
-    text-align: center;
-    border-bottom: 1px solid #eee;
-    background: #f9f9f9;
-}
-.mobile-header-title {
-    margin: 0;
-    font-weight: 700;
-}
-
-.mobile-notifications-area {
-    padding: 15px;
-    flex-grow: 1; /* Ocupa todo el espacio restante */
-    overflow-y: auto; /* HACE QUE LAS NOTIFICACIONES SEAN SCROLLABLES */
-    background: #f0f2f5; /* Color de fondo tipo iOS */
-}
-.mobile-waiting-text {
     padding: 20px;
-    color: #888;
-    text-align: center;
+    text-align:center;
+    border-bottom: 1px solid #EEE;
+}
+.mobile-header-title { font-weight:700; color:var(--text-title); margin:0; }
+
+/* notifications area */
+.mobile-notifs {
+    flex:1;
+    background: #F2F2F7;
+    padding: 16px;
+    overflow-y:auto;
+}
+.mobile-notif {
+    background:#fff;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:12px;
+    box-shadow: var(--shadow-xs);
+}
+.mobile-notif .app-title { font-size:12px; color:var(--text-sub); font-weight:700; display:flex; gap:8px; align-items:center; }
+.mobile-notif .title { font-size:15px; font-weight:700; margin-top:6px; }
+.mobile-notif .body { color:#334155; font-size:14px; margin:8px 0; }
+
+/* small action inside notification */
+.mobile-btn {
+    display:inline-block;
+    text-align:center;
+    padding:10px 12px;
+    border-radius:10px;
+    background:var(--primary);
+    color:#fff;
+    font-weight:700;
+    text-decoration:none;
 }
 
-.notification-card {
-    background: white;
-    border: none;
-    border-radius: 20px;
-    padding: 18px;
-    margin-bottom: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-}
+/* ---------- FORMS / SURVEYS ---------- */
+.survey-title { font-size:16px; font-weight:700; color:var(--primary); text-align:center; margin:0 0 8px 0; }
+.survey-subtitle { color:var(--muted); font-size:13px; text-align:center; margin-bottom:12px; }
+.survey-question { margin-bottom:12px; }
+.survey-radio { padding:10px; background:#fff; border-radius:10px; border:1px solid var(--border); }
 
-.notification-title {
-    font-weight: 700;
-    color: #111;
-    margin-bottom: 5px;
-    display: block;
-    font-size: 1.1em;
-}
-.notification-body {
-    font-size: 15px;
-    color: #333;
-    margin: 0;
-}
-.notification-app-title {
-    font-weight: 600;
-    color: #667eea; /* Color de tu app */
-    font-size: 0.9em;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-}
-.notification-app-title span {
-    margin-left: 5px;
-}
+/* ---------- MISC ---------- */
+.empty-list { padding:40px; text-align:center; color:var(--text-sub); }
+.small-muted { color:var(--muted); font-size:13px; }
 
-.notification-link {
-    display: inline-block;
-    padding: 10px 18px;
-    background: #667eea;
-    color: white !important;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: 600;
-    margin-top: 10px;
-    transition: all 0.2s;
-}
-.notification-link:hover {
-    background: #764ba2;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.mobile-home-bar {
-    width: 140px;
-    height: 5px;
-    background: #ccc;
-    border-radius: 5px;
-    margin: 10px auto;
-    margin-bottom: 15px;
-}
-
-/* --- NUEVO: Estilo para el botón de cerrar --- */
-.btn-close-details {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: #e5e7eb;
-    color: #6b7280;
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 28px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-close-details:hover {
-    background: #fca5a5; /* Rojo suave */
-    color: #b91c1c; /* Rojo oscuro */
-    transform: scale(1.1);
-}
-
-/* --- NUEVO: Estilos para la Encuesta Mejorada --- */
-.survey-title {
-    color: #111;
-    text-align: center;
-    margin-bottom: 20px;
-}
-.survey-subtitle {
-    font-size: 14px;
-    color: #666;
-}
-.survey-question-label {
-    font-weight: 600;
-    font-size: 15px;
-}
-.survey-radio-group {
-    margin-top: 5px;
-    margin-bottom: 15px;
-}
-.survey-result-container {
-    margin-top: 15px;
-    text-align: center;
-}
-.survey-result-error {
-    color: #ef4444;
-    font-weight: 600;
-}
-.survey-result-error-inline {
-    color: #ef4444;
-    background: white;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 600;
-}
-.survey-result-success {
-    color: green;
-    background: white;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-/* --- Estilos que faltaven del teu arxiu original --- */
-.survey-question-card {
-    background: #f9f9f9;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 12px;
-}
-.survey-question-title {
-    font-weight: 600;
-    font-size: 15px;
-    color: #333;
-    margin-bottom: 10px;
-}
-.form-check {
-    margin-bottom: 5px;
-}
-.form-check-label {
-    font-size: 14px;
-}
-.survey-confirmation-card {
-    text-align: center;
-    padding: 40px 20px;
-    background: #f0fdf4; /* Verde muy claro */
-    border: 1px solid #bbf7d0; /* Verde claro */
-    border-radius: 20px;
-    margin-top: 50px;
-}
-.survey-confirmation-icon {
-    font-size: 50px;
-    color: #22c55e; /* Verde */
-}
-.survey-confirmation-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #166534; /* Verde oscuro */
-    margin-top: 15px;
-}
-.survey-confirmation-text {
-    font-size: 15px;
-    color: #15803d;
-    margin-top: 10px;
-}
-
-/* Aquest '}' extra estava al teu arxiu original, l'he tret
-   perquè segurament era un error de sintaxi */
-
-/* Aquest estil no l'he fet servir, ja que 'ios_homescreen.jpg'
-   no s'utilitza a l'app.py, però el deixo per si de cas */
-.mobile-homescreen-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Hace que la imagen cubra la pantalla */
-    border-radius: 48px; /* Para que encaje en la pantalla */
+@media (max-width: 980px){
+    .page-grid { grid-template-columns: 1fr; padding: 20px; }
+    .left-column { order:2; }
+    .right-column { order:1; }
+    .mobile-frame { width: 320px; height: 700px; }
 }

@@ -5,10 +5,13 @@
 from fpdf import FPDF
 import os
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 import time
+
 
 # --- PALETA DE COLORES CORPORATIVA (Elegante) ---
 COLOR_PRIMARIO = (0, 89, 157)       # Azul Aigües Profundo
@@ -259,7 +262,8 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     # Guardar
     output_dir = '../generated_reports/technical_reports/'
     os.makedirs(output_dir, exist_ok=True)
-    filename = os.path.join(output_dir, f"Informe_Tecnic_{incidencia_id}.pdf")
+    cliente_id = datos_cliente.get('cliente_id', 'Unknown')
+    filename = os.path.join(output_dir, f"Informe_Tecnic_{cliente_id}_{incidencia_id}.pdf")
     pdf.output(filename)
     print(f"✅ Informe Profesional generado: {filename}")
     return filename
@@ -362,7 +366,8 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     # Guardar
     output_dir = '../generated_reports/regular_mails/'
     os.makedirs(output_dir, exist_ok=True)
-    filename = os.path.join(output_dir, f"Carta_Incidencia_{incidencia_id}.pdf")
+    cliente_id = cliente.get('cliente_id', 'Unknown')
+    filename = os.path.join(output_dir, f"Carta_Incidencia_{cliente_id}_{incidencia_id}.pdf")
     pdf.output(filename)
     print(f"✅ Carta Profesional generada: {filename}")
     return filename
