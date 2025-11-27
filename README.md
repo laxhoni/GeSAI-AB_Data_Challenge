@@ -1,4 +1,11 @@
-# GeSAI AB Data Challenge
+# GeSAI: Gestió Segura i Automatitzada d'Incidències
+> **Aigües de Barcelona Data Challenge** | Team GeSAI | UPF
+
+## Resumen Ejecutivo
+**GeSAI** es una plataforma integral para la detección temprana y gestión de fugas de agua. Combina un modelo de **Inteligencia Artificial (LightGBM)** entrenado con más de 75 millones de registros para predecir anomalías, con un sistema de **Meta-Análisis** que prioriza la gravedad según la tendencia futura.
+
+El sistema destaca por su enfoque híbrido en la comunicación: notificaciones digitales automáticas y generación de **cartas postales físicas** para clientes afectados por la brecha digital.
+
 # Estructura del Proyecto
 
 A continuación se detalla la organización de carpetas y archivos del sistema GeSAI:
