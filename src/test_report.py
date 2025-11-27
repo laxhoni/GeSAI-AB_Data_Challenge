@@ -1,10 +1,13 @@
-# prueba_mail
+# src/test_report.py
 
 import sys
 import os
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+
+
+# Test generar_carta_postal_pdf
 
 # Aseguramos importación correcta
 try:
@@ -13,10 +16,10 @@ except ImportError:
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from reports_manager import generar_carta_postal_pdf
 
-# 1. Definimos datos de prueba (simulando lo que vendría de la BBDD)
+# Definimos datos de prueba (simulando lo que vendría de la BBDD)
 id_incidencia_test = 99999
 cliente_test = {
-    'cliente_id': 999, # Añadido para que aparezca en el asunto de la carta
+    'cliente_id': 999, 
     'nombre': 'Juan Pérez García',
     'direccion': 'Av. Diagonal 211, 4º 2ª, 08018 Barcelona',
     # Simulamos que no tenemos contacto digital
@@ -26,23 +29,22 @@ cliente_test = {
 
 print("--- Iniciando prueba de generación de CARTA POSTAL ---")
 
-# 2. Llamamos a la función directamente
+# Llamamos a la función directamente
 try:
     ruta_generada = generar_carta_postal_pdf(id_incidencia_test, cliente_test)
 
-    # 3. Verificamos el resultado
+    # Verificamos el resultado
     if ruta_generada:
-        print(f"\n✅ ¡ÉXITO! La Carta PDF se ha generado correctamente.")
+        print(f"\n✅ La Carta PDF se ha generado correctamente.")
         print(f"📂 Búscalo aquí: {ruta_generada}")
-        print("   (Verifica que el logo y el enlace de contacto aparecen bien)")
     else:
-        print("\n❌ ERROR: No se pudo generar el PDF. Revisa los logs de error arriba.")
+        print("\n❌ ERROR: No se pudo generar el PDF.")
 
 except Exception as e:
     print(f"\n❌ EXCEPCIÓN: {e}")
     
     
-# prueba_informe
+# Test generar_informe_tecnico_pdf
 
 # Aseguramos que pueda importar reports_manager si se ejecuta desde src/
 try:
@@ -53,7 +55,7 @@ except ImportError:
 
 print("--- INICIANDO PRUEBA DE INFORME TÉCNICO ---")
 
-# 1. DATOS DE PRUEBA (SIMULACIÓN)
+# Definimos datos de prueba
 
 # A) Datos de la Incidencia y Cliente
 id_incidencia = 105
@@ -70,9 +72,9 @@ datos_incidencia = {
     'fecha': datetime.now().strftime("%d/%m/%Y"),
     'estado': 'Fuga Grave',
     'descripcion': 'Anomalía detectada por IA. Consumo nocturno elevado constante.',
-    'prob_hoy': 0.98,      # Necesario para el nuevo informe
-    'prob_manana': 0.99,   # Necesario para el nuevo informe
-    'prob_7dias': 0.99     # Necesario para el nuevo informe
+    'prob_hoy': 0.98,      
+    'prob_manana': 0.99,   
+    'prob_7dias': 0.99     
 }
 
 # B) Datos Históricos (DataFrame falso para la gráfica)
@@ -85,14 +87,14 @@ consumos = [np.random.uniform(10, 50) for _ in range(25)] + \
            [np.random.uniform(150, 250) for _ in range(5)]
 
 df_historico = pd.DataFrame({
-    'FECHA_HORA': fechas,  # <--- CORREGIDO: Coincide con reports_manager.py
+    'FECHA_HORA': fechas,  
     'CONSUMO_REAL': consumos
 })
 
 print(f"Datos generados: {len(df_historico)} registros de consumo.")
 
 
-# 2. EJECUTAR LA GENERACIÓN
+# Enviamos a la función de generación de informe
 print("\nGenerando PDF...")
 try:
     ruta_pdf = generar_informe_tecnico_pdf(
@@ -103,9 +105,8 @@ try:
     )
     
     if ruta_pdf:
-        print(f"\n✅ ¡ÉXITO! Informe generado correctamente.")
+        print(f"\n✅ Informe generado correctamente.")
         print(f"📂 Archivo: {ruta_pdf}")
-        print("   (Ábrelo para ver la gráfica de consumo y el nuevo formato)")
     else:
         print("\n❌ Error: La función devolvió None.")
 
