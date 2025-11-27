@@ -45,7 +45,7 @@ GeSAI-AB_Data_Challenge/
 │       ├── lgbm_model_TARGET_HOY.joblib    # Modelo IA entrenado (Predicción inmediata)
 │       └── lgbm_model_TARGET_MANANA.joblib # Modelo IA entrenado (Predicción a 24h)
 │
-├── docs/                       # Documentación adicional del proyecto
+├── docs/                       # Documentación adicional sobre la gestión del proyecto
 │   └── README.md
 │
 ├── generated_reports/          # Salida de archivos generados por el sistema (PDFs)
