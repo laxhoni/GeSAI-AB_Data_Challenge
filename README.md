@@ -66,3 +66,51 @@ GeSAI-AB_Data_Challenge/
         ├── logo_1.png          # Logo corporativo principal (Versión Login)
         ├── logo_2.png          # Logo corporativo secundario (Versión Header/PDF)
         └── style.css           # Hoja de estilos personalizada (Look & Feel Enterprise)
+```
+
+## Arquitectura Técnica
+
+El sistema sigue un patrón de **Microservicios Desacoplados**:
+
+1.  **Capa de Datos (ETL):** Procesamiento distribuido con **Dask** para manejar grandes volúmenes de datos históricos.
+2.  **Capa de Inteligencia (AI Core):** Tres modelos **LightGBM** independientes predicen el riesgo a corto, medio y largo plazo.
+3.  **Capa de Negocio (Meta-Análisis):** Un motor lógico evalúa los "Deltas" (tendencias de probabilidad) para clasificar la fuga como *Grave*, *Moderada* o *Leve*.
+4.  **Capa de Presentación (App):** Interfaz web construida con **Dash/Plotly** que se actualiza en tiempo real mediante lectura de BBDD.
+
+---
+
+## Guía de ejecución (Demo)
+
+Para levantar el entorno completo de simulación en local:
+
+### 1. Instalación de las dependencias requeridas
+```bash 
+pip install -r requirements.txt
+```
+
+### 2. Inicialización de BBDD
+Este script crea las tablas y genera 50 clientes sintéticos (mezclando perfiles digitales y analógicos).
+
+```bash 
+cd src
+python setup_database.py
+```
+
+### 3. Ejecución de la simulación
+El sistema requiere dos terminales abiertas simultáneamente para simular el flujo real.
+
+TERMINAL 1 (Backend IoT): Simula la llegada de datos de contadores, ejecuta la IA y escribe alertas.
+```bash 
+python simulador_backend.py
+```
+
+TERMINAL 2 (Frontend Dashboard): Arranca la interfaz visual para el gestor.
+```bash 
+python app.py
+```
+
+### 4. Acceso al MVP
+* Panel de Control: Abra http://127.0.0.1:8050/ en su navegador.
+* Simulación movil: Abra http://127.0.0.1:8050/sim-movil/ID_CLIENTE (Poliza suministro)
+* Credenciales: empresa@gesai.com / 1234
+
