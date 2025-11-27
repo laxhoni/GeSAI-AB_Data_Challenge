@@ -47,9 +47,9 @@ GeSAI-AB_Data_Challenge/
 │
 ├── project-notebooks/          # Laboratorio de Data Science (Jupyter Notebooks)
 │   ├── data-preparation.ipynb          # Notebook 1: ETL distribuido con Dask, limpieza y enriquecimiento de datos
-│   ├── model-training.ipynb            # Notebook 3: Entrenamiento LightGBM, optimización de umbrales y exportación
-│   ├── prediction-meta-analysis.ipynb  # Notebook 4: Definición de reglas de negocio, deltas y clasificación de gravedad
-│   ├── prediction-XAI.ipynb            # Notebook 5: Explicabilidad del modelo (SHAP values) para caja blanca
+│   ├── model-training.ipynb            # Notebook 2: Entrenamiento LightGBM, optimización de umbrales y exportación
+│   ├── prediction-meta-analysis.ipynb  # Notebook 3: Definición de reglas de negocio, deltas y clasificación de gravedad
+│   ├── prediction-XAI.ipynb            # Notebook 4: Explicabilidad del modelo (SHAP values) para caja blanca
 │   └── README.md
 │
 └── src/                        # Código Fuente de la Aplicación (Producción)
