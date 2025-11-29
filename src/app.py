@@ -81,6 +81,54 @@ def incidencia_card(inc):
         ]
     )
 
+def _build_recommendations_layout(cliente_id):
+    """Genera el layout de las recomendaciones de autodiagnóstico (Screen 2)."""
+    
+    style_content = {'padding': '20px', 'textAlign': 'left', 'backgroundColor': '#f9fafb'}
+    style_list_item = {'marginBottom': '8px', 'color': '#374151', 'fontSize': '0.9rem'}
+    style_warning = {
+        'marginTop': '15px',
+        'padding': '10px',
+        'backgroundColor': '#fef3c7', 
+        'color': '#92400E',
+        'borderRadius': '6px',
+        'borderLeft': '4px solid #F59E0B', 
+        'fontWeight': '500',
+        'fontSize': '0.85rem'
+    }
+
+    recommendations_content = html.Div(style=style_content, children=[
+        html.H4('Recomendaciones de Autodiagnóstico', style={'color': 'var(--primary)', 'fontSize': '1.1rem', 'marginBottom': '15px'}),
+
+        #Causas consumo anomalo
+        html.Div(className='mb-4', children=[
+            html.P(html.B('Si ha detectado un consumo de agua superior al habitual, puede ser por diferentes causas:'), style={'marginBottom': '10px', 'color': '#374151', 'fontWeight': 'bold'}),
+            html.Ul(style={'listStyleType': 'disc', 'marginLeft': '20px'}, children=[
+                html.Li('Cambio de hábitos de consumo, más personas en la vivienda, cambio de algún electrodoméstico, instalación de un aparato descalcificador de agua...', style=style_list_item),
+                html.Li('Un escape de agua no detectado.', style=style_list_item),
+                html.Li('Un uso fraudulento de su contador.', style=style_list_item),
+            ])
+        ]),
+
+        #Comprobar si hay una fuga
+        html.Div(children=[
+            html.H5(html.B('Pasos para comprobar una fuga:'), style={'marginBottom': '10px', 'color': 'var(--primary)', 'fontSize': '1rem'}),
+            html.Ol(style={'listStyleType': 'decimal', 'marginLeft': '20px'}, children=[
+                html.Li('Localice su contador en la batería de contadores de su edificio, y asegúrese de que la llave de paso de su casa y las llaves del contador están abiertas.', style=style_list_item),
+                html.Li('Asegúrese que los grifos de su casa están cerrados y que todos los electrodomésticos que funcionan con agua no están en funcionamiento.', style=style_list_item),
+                html.Li('Tome la lectura actual del contador (o hágale una foto).', style=style_list_item),
+                html.Li('**4 horas después**, vuelva a tomar la lectura. Si ha cambiado, seguramente tiene una fuga.', style=style_list_item),
+            ]),
+            html.Div(style=style_warning, children=[
+                html.B('Aviso:'), ' Se recomienda realizar esta prueba por la noche, cuando el consumo es mínimo y la prueba es más fiable.'
+            ])
+        ])
+    ])
+    
+    back_button = dcc.Link("Volver", href=f"/sim-movil/{cliente_id}", className='btn-block', style={'textDecoration': 'none', 'display': 'block', 'textAlign': 'center', 'marginTop':'20px', 'padding':'10px 20px'})
+    
+    return html.Div(className='card', children=[recommendations_content, back_button])
+
 def build_verificacion_layout(token):
     """Construye la página de encuesta pública."""
     return html.Div(className='verification-page-container', children=[
@@ -91,8 +139,7 @@ def build_verificacion_layout(token):
 
 def build_simulador_movil_layout(cliente_id, pathname):
     """
-    Simulador móvil: si pathname contiene 'verificar' o 'confirmacion' muestra pantallas concretas,
-    si no, lista notificaciones. Esta función se usa desde el router.
+    Simulador móvil: Ruteo de pantallas (Notificaciones, Encuesta, Gracias, Recomendaciones).
     """
     contenido_pantalla = None
     titulo = "Notificaciones"
@@ -104,6 +151,9 @@ def build_simulador_movil_layout(cliente_id, pathname):
     elif 'confirmacion' in pathname:
         contenido_pantalla = _build_confirmation_layout(cliente_id)
         titulo = "Éxito"
+    elif 'recomendaciones' in pathname:
+        contenido_pantalla = _build_recommendations_layout(cliente_id)
+        titulo = "Recomendaciones"
     else:
         contenido_pantalla = html.Div(id='div-notificaciones-movil', children=[
             html.P("Sin notificaciones nuevas", className='small-muted')
@@ -120,7 +170,6 @@ def build_simulador_movil_layout(cliente_id, pathname):
         ])
     ])
 
-
 def _build_survey_layout(token):
     preguntas = [
         "1. ¿Ha notado un sonido de agua corriendo (siseo)?",
@@ -128,7 +177,8 @@ def _build_survey_layout(token):
         "3. ¿El contador se mueve con todo cerrado?",
         "4. ¿Ha detectado humedades recientes?",
         "5. ¿Ha habido obras recientes?",
-        "6. ¿Considera su consumo normal?"
+        "6. ¿Ha realizado usted, o en su hogar, alguna actividad que justifique un alto consumo en las últimas 48 horas?"
+        "7. ¿El proceso de notificación de Aigües de Barcelona ha sido claro y satisfactorio?"
     ]
     opciones = [
         {'label': 'Sí', 'value': 'SI'},
@@ -152,16 +202,31 @@ def _build_survey_layout(token):
         html.Div(id='survey-result', className='survey-result-container')
     ])
 
-
 def _build_confirmation_layout(cliente_id):
+    """
+    Genera el layout de la pantalla de agradecimiento (Screen 1), 
+    con el botón 'Siguiente' para ir a las recomendaciones.
+    """
+    link_destino = f"/sim-movil/{cliente_id}/recomendaciones"
+
     return html.Div(className='card', children=[
         html.Div(style={'textAlign': 'center', 'padding': '40px'}, children=[
             html.Div('✅', style={'fontSize': '50px', 'marginBottom': '20px'}),
             html.H3('Recibido', style={'color': 'var(--primary)'}),
             html.P('Gracias. Hemos registrado sus respuestas.', style={'color': 'var(--muted)'}),
-            dcc.Link("Volver", href=f"/sim-movil/{cliente_id}", className='btn-block', style={'textDecoration': 'none', 'display': 'inline-block', 'marginTop':'20px', 'width':'auto','padding':'10px 20px'})
+            dcc.Link("Siguiente", href=link_destino, className='btn-block btn-primary', style={'textDecoration': 'none', 'display': 'inline-block', 'marginTop':'20px', 'width':'auto','padding':'10px 20px'})
         ])
     ])
+
+#def _build_confirmation_layout(cliente_id):
+    #return html.Div(className='card', children=[
+        #html.Div(style={'textAlign': 'center', 'padding': '40px'}, children=[
+            #html.Div('✅', style={'fontSize': '50px', 'marginBottom': '20px'}),
+            #html.H3('Recibido', style={'color': 'var(--primary)'}),
+            #html.P('Gracias. Hemos registrado sus respuestas.', style={'color': 'var(--muted)'}),
+            #dcc.Link("Volver", href=f"/sim-movil/{cliente_id}", className='btn-block', style={'textDecoration': 'none', 'display': 'inline-block', 'marginTop':'20px', 'width':'auto','padding':'10px 20px'})
+        #])
+    #])  
 
 
 # ------------------------------------------------------------
