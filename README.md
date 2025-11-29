@@ -108,7 +108,7 @@ El sistema requiere dos terminales abiertas simultáneamente para simular el flu
 
 TERMINAL 1 (Backend IoT): Simula la llegada de datos de contadores, ejecuta la IA y escribe alertas.
 ```bash 
-python simulador_backend.py
+python simulacion_backend.py
 ```
 
 TERMINAL 2 (Frontend Dashboard): Arranca la interfaz visual para el gestor.
