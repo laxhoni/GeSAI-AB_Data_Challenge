@@ -254,3 +254,104 @@ El principal objetivo del equipo GeSAI es gestionar y desarrollar la plataforma 
 El objetivo final es reducir el tiempo de respuesta, pérdidas de agua e incidencias recurrentes, a la vez que genera confianza y se maximiza la eficiencia del sistema para minimizar riesgos.
 
 
+
+## 4. Metodología Técnica: De los Datos al Modelo
+* **4.1. Ingeniería de Datos (Data Engineering):**
+
+* **4.2. Modelado Predictivo (The AI Core):**
+
+
+
+* **4.3. Meta-Análisis de Decisiones:**
+
+
+
+* **4.4. Resultados y Validación:**
+
+
+    
+## 5. Arquitectura del Sistema y Visualización (MVP)
+* **5.1. Arquitectura de Microservicios:**
+
+
+    
+* **5.2. Flujo de Funcionamiento (End-to-End):**
+
+#### FASE 0: Ingeniería y Preparación de Datos (ETL Avanzado)
+
+Esta fase gestiona la ingesta, enriquecimiento y limpieza del dataset masivo, integrando fuentes heterogéneas.
+
+1.  **INGESTA Y ENRIQUECIMIENTO (Data Enrichment)**
+    * **Dataset Base:** Lectura del archivo oficial `data_ab3_complete.parquet` (Consumo horario).
+    * **Fusión Multidimensional (Merges):** Se cruza el consumo con 6 fuentes de datos externos para añadir contexto:
+        * **Infraestructura:** Edad de los edificios (Catastro) y Obras en la vía pública (Open Data BCN).
+        * **Socioeconómico:** Renta familiar disponible (Open Data BCN).
+        * **Demográfico:** Distribución de edad de la población por sección censal.
+        * **Meteorológico:** Histórico de temperatura y precipitaciones (AEMET).
+    * **Cruce Geoespacial:** Uso de shapefiles de **Distritos y Barrios** para mapear las coordenadas de las obras con las secciones censales de los clientes.
+
+2.  **LIMPIEZA Y OPTIMIZACIÓN**
+    * **Gestión de Memoria:** Uso de Dask para el procesamiento distribuido y *Garbage Collection* agresivo tras cada merge.
+    * **Imputación:** Tratamiento de nulos en datos meteorológicos y festivos.
+    * **Sanitización:** Eliminación de duplicados (Clave: Póliza + Fecha + Hora).
+    * **PERSISTENCIA:** Generación del `dataset_FINAL_COMPLETO.parquet` listo para ML.
+
+---
+
+#### FASE 1: Entrenamiento y Configuración de la IA (Offline)
+
+Se generan los artefactos predictivos y las reglas de negocio.
+
+1.  **INICIO (Setup)**
+    * Ejecución de `setup_database.py`.
+    * **ACCIÓN:** Se inicializa la BBDD SQLite (`gesai.db`) y se pueblan las tablas con clientes sintéticos.
+
+2.  **INGENIERÍA DE FEATURES**
+    * [Data Maestro] → **(Pandas/Dask)** → **Creación de Variables Temporales** (Lags, Rolling Means y Ratios de Desviación).
+    * **OUTPUT:** Matriz de entrenamiento (X) optimizada.
+
+3.  **MODELADO (Machine Learning)**
+    * [X] → `model-training.ipynb` → **LightGBM** (3 Modelos independientes).
+    * **VALIDACIÓN:** Determinación del Umbral Óptimo (0.30) para maximizar F1-Score.
+    * **OUTPUT:** 3 archivos `.joblib` (Modelos) + `datos_simulacion_features.csv` (Datos futuros para la demo).
+
+4.  **META-ANÁLISIS (Reglas de Negocio)**
+    * `prediction-meta-analysis.ipynb` define la lógica de clasificación (Semáforo: Grave, Moderada, Leve) basada en Deltas (tendencias).
+
+---
+
+#### FASE 2: Simulación y Respuesta en Tiempo Real (Online)
+
+Demostración del funcionamiento del MVP mediante microservicios.
+
+1.  **ARRANQUE DEL WORKER (Backend)**
+    * `simulador_backend.py` inicia el bucle de simulación cronológica.
+    * **ACCIÓN:** Carga los IDs de clientes reales y lee el stream de datos del CSV.
+
+2.  **DETECCIÓN DE EVENTO**
+    * El Worker lee una fila ordenada por fecha.
+    * Llama a `motor_gesai.ejecutar_deteccion_simulada(fila)`.
+
+3.  **PROCESAMIENTO DEL CEREBRO (`motor_gesai.py`)**
+    * **INFERENCIA:** Carga los modelos `.joblib` y predice probabilidad para Hoy, Mañana y 7 Días.
+    * **CLASIFICACIÓN:** Aplica el Meta-Análisis para determinar la gravedad.
+
+4.  **ACCIÓN Y COMUNICACIÓN (Automática)**
+    * **Persistencia:** Inserta la incidencia en la tabla `incidencias`.
+    * **Gestión de Brecha Digital (Lógica Condicional):**
+        * **[Cliente Digital]:** Inserta token y mensaje en `notificaciones` (para App Móvil).
+        * **[Cliente NO Digital]:** Genera automáticamente el **PDF Carta Postal** y lo guarda en `generated_reports/regular_mails`.
+
+5.  **VISUALIZACIÓN E INTERACCIÓN (Frontend)**
+    * `app.py` actualiza el Dashboard en tiempo real leyendo la BBDD.
+    * **ACCIÓN MANUAL:** El gestor revisa una incidencia y pulsa **"Descargar Informe"**.
+    * **GENERACIÓN BAJO DEMANDA:** El sistema genera en ese instante el **Informe Técnico PDF** (con gráficas de consumo) y lo entrega al usuario.
+
+---
+    
+* **5.3. Interfaces de Usuario:**
+    * **Dashboard de Empresa:** Panel de control en tiempo real para gestores.
+    * **Simulador Móvil:** Experiencia del cliente digital (Notificación Push + Encuesta).
+    * **Generador de Reportes:** Automatización de Informes Técnicos y Cartas Postales (PDF).
+
+
