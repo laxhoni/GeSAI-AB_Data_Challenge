@@ -254,20 +254,78 @@ El principal objetivo del equipo GeSAI es gestionar y desarrollar la plataforma 
 El objetivo final es reducir el tiempo de respuesta, pérdidas de agua e incidencias recurrentes, a la vez que genera confianza y se maximiza la eficiencia del sistema para minimizar riesgos.
 
 
-
 ## 4. Metodología Técnica: De los Datos al Modelo
+
+La metodología desarrollada para GeSAI se fundamenta en un ciclo de vida de datos riguroso, desde la ingesta masiva hasta la toma de decisiones automatizada, priorizando la escalabilidad, la precisión y la explicabilidad.
+
 * **4.1. Ingeniería de Datos (Data Engineering):**
+    El sistema se alimenta de un **Data Lake** heterogéneo que combina datos privados de alta frecuencia con fuentes públicas para contextualizar el consumo.
+    
+    * **Fuentes de Datos e Integración:**
+        * **Telelectura (Oficial):** Dataset `data_ab3_complete.parquet` del AB Data Challenge, conteniendo más de **75 millones de registros** de consumo horario y alertas de fugas históricas.
+        * **Infraestructura Urbana (Open Data BCN):**
+            * *Catastro:* Edad de las edificaciones para correlacionar fugas con la antigüedad de la red:
+              
+              https://opendata-ajuntament.barcelona.cat/data/es/dataset/est-cadastre-edificacions-any-const/resource/f0af7dd5-2550-4acb-af97-c1a2dceb31ee#additional-info
+            * *Obras Públicas:* Datos de obras en ejecución geolocalizadas para descartar anomalías externas:
+              
+              https://opendata-ajuntament.barcelona.cat/data/ca/dataset/renda-disponible-llars-bcn/resource/3df0c5b9-de69-4c94-b924-57540e52932f | https://opendata-ajuntament.barcelona.cat/data/ca/dataset/obres
+        * **Socioeconómico y Demográfico:** Renta familiar disponible y distribución de edad por sección censal para identificar zonas de vulnerabilidad social y brecha digital:
+
+          https://portaldades.ajuntament.barcelona.cat/ca/microdades/33dd918f-bbf1-4b1a-8898-6bb8709f8139
+        * **Meteorología (AEMET):** Histórico de temperaturas y precipitaciones para aislar picos de consumo estacionales (ej. riego):
+
+          https://opendata.aemet.es/centrodedescargas/inicio
+        * **Geoespacial:** Mapeo de coordenadas mediante shapefiles de Distritos y Barrios:
+
+          https://opendata-ajuntament.barcelona.cat/data/ca/dataset/20170706-districtes-barris/resource/cd800462-f326-429f-a67a-c69b7fc4c50a
+    
+    * **Estrategia Big Data:**
+        Dada la volumetría de los datos, se implementó una arquitectura de procesamiento distribuido utilizando **Dask**. Esto permitió la ingesta, limpieza y fusión (*merges*) de los datasets sin desbordar la memoria RAM, utilizando técnicas de *lazy evaluation* y particionado. Se aplicó una sanitización estricta para eliminar duplicados y corregir formatos numéricos.
+    
+    * **Creación de Nuevos Datos (Feature Engineering):**
+        Para dotar al modelo de contexto temporal sin usar redes recurrentes pesadas, se generaron 32 variables sintéticas:
+        * **Lags (Retardos):** Consumo en ventanas pasadas (1h, 6h, 12h, 24h, 72h) para capturar patrones diarios.
+        * **Rolling Windows:** Medias y desviaciones móviles de 7 días para establecer la línea base de comportamiento normal del usuario.
+        * **Ratios de Desviación:** Variables calculadas (`Consumo Actual / Media 7D`) que magnifican las anomalías para facilitar su detección por el algoritmo.
 
 * **4.2. Modelado Predictivo (The AI Core):**
-
-
+    El núcleo de inteligencia artificial se diseñó buscando el equilibrio óptimo entre rendimiento predictivo y eficiencia computacional.
+    
+    * **Selección del Modelo:**
+        Se seleccionó **LightGBM (Gradient Boosting Machine)** frente a arquitecturas de Deep Learning (LSTM). LightGBM demostró ser superior en datos tabulares, ofreciendo una velocidad de entrenamiento drásticamente mayor y una mejor gestión de valores nulos y categorías desbalanceadas.
+    
+    * **Estrategia de Entrenamiento:**
+        Se implementó un enfoque de **Clasificación Multi-Horizonte**, entrenando tres modelos independientes para predecir la probabilidad de fuga en diferentes ventanas temporales:
+        1.  **Modelo Inmediato (Target HOY):** Probabilidad de fuga en la hora actual.
+        2.  **Modelo Corto Plazo (Target MAÑANA):** Proyección a 24 horas.
+        3.  **Modelo Estructural (Target 7 DÍAS):** Proyección a una semana.
+    
+    * **Optimización (Threshold Tuning):**
+        Mediante un análisis de sensibilidad en el conjunto de validación, se ajustó el umbral de decisión de 0.50 a **0.30**. Este ajuste permitió maximizar el **Recall (Sensibilidad)** hasta un 70% sin sacrificar significativamente la precisión, asegurando la detección de la mayoría de las incidencias reales.
 
 * **4.3. Meta-Análisis de Decisiones:**
-
-
+    Para reducir las falsas alarmas y priorizar la actuación, no basta con la predicción de la IA. Se desarrolló una capa lógica de negocio superior:
+    
+    * **Lógica de Negocio (Semáforo de Riesgo):**
+        El sistema evalúa no solo la probabilidad actual, sino la **derivada del riesgo** (Deltas).
+        * `Delta Corto = Prob. Mañana - Prob. Hoy`
+        * `Delta Largo = Prob. 7 Días - Prob. Hoy`
+    
+    * **Clasificación de Gravedad:**
+        * **🔴 Fuga Grave:** Alta probabilidad actual (>80%) O tendencia de crecimiento acelerada (`Delta > 5%`). Acción: Notificación inmediata.
+        * **🟠 Fuga Moderada:** Alta probabilidad pero estable. Acción: Aviso estándar.
+        * **🟢 Fuga Leve / No Fuga:** Probabilidad baja o riesgo decreciente. Acción: Monitorización pasiva (Silencio positivo para evitar saturación).
 
 * **4.4. Resultados y Validación:**
-
+    El modelo final fue validado mediante *backtesting* en un conjunto de datos "futuro" (no visto durante el entrenamiento), arrojando métricas de nivel productivo:
+    
+    * **Métricas de Rendimiento:**
+        * **Precisión (Precision): 84%**. De cada 100 alertas enviadas, 84 son fugas reales, garantizando la credibilidad del sistema y la eficiencia de los operarios.
+        * **AUC-PR: 0.86**. Indica una excelente capacidad para ordenar correctamente los casos más graves frente al ruido.
+    
+    * **Explicabilidad (XAI):**
+        Se aplicó análisis **SHAP (SHapley Additive exPlanations)** para convertir el modelo de "caja negra" en "caja blanca", permitiendo identificar qué factores (ej. consumo nocturno elevado, antigüedad del edificio) dispararon cada alerta específica.
 
     
 ## 5. Arquitectura del Sistema y Visualización (MVP)
