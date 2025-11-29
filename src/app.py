@@ -274,7 +274,7 @@ def build_empresa_layout(session_data):
             # Toggle dark mode as a button (más atractivo)
             html.Button('Modo Noche', id='dark-mode-toggle', n_clicks=0, className='btn-darkmode'),
 
-            html.Div(className='user-pill', children=[html.Span('👤'), html.Span(nombre_usuario)]),
+            html.Div(className='user-pill', style={'backgroundColor': 'transparent', 'border': '1px solid currentColor'}, children=[html.Span('👤'), html.Span(nombre_usuario)]),
             html.Button('Salir', id={'type': 'btn-logout', 'index': 'empresa'}, className='btn-logout')
         ])
     ])
