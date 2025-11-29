@@ -161,7 +161,7 @@ def build_simulador_movil_layout(cliente_id, pathname):
 
     return html.Div(className='mobile-frame', children=[
         dcc.Store(id='store-cliente-id', data=cliente_id),
-        dcc.Interval(id='intervalo-notificaciones-movil', interval=3000, n_intervals=0),
+        #dcc.Interval(id='intervalo-notificaciones-movil', interval=3000, n_intervals=0),
         html.Div(className='mobile-screen', children=[
             html.Div(className='mobile-notch'),
             html.Div(className='mobile-header', children=[html.H5(titulo, className='mobile-header-title')]),
@@ -218,7 +218,7 @@ def _build_confirmation_layout(cliente_id):
         ])
     ])
 
-#def _build_confirmation_layout(cliente_id):
+##def _build_confirmation_layout(cliente_id):
     #return html.Div(className='card', children=[
         #html.Div(style={'textAlign': 'center', 'padding': '40px'}, children=[
             #html.Div('✅', style={'fontSize': '50px', 'marginBottom': '20px'}),
@@ -501,11 +501,18 @@ def handle_details(n_card, n_close, n_down):
 def mobile_poll(n, cid, path):
     if not path or not cid:
         return no_update
-    if 'verificar' in path or 'confirmacion' in path:
+    # Excluir 'verificar', 'confirmacion' Y 'recomendaciones'
+    if 'verificar' in path or 'confirmacion' in path or 'recomendaciones' in path:
         return no_update
+    
     notifs = get_notificaciones_pendientes_cliente(cid)
+    
+    # 1. Si no hay notificaciones, devolvemos no_update. 
+    # La inicialización del 'Sin notificaciones nuevas' se maneja en build_simulador_movil_layout.
     if not notifs:
-        return no_update
+        # Si ya estábamos mostrando 'Sin notificaciones', no hacemos nada para evitar el callback loop.
+        return no_update 
+    
     cards = []
     for notif in notifs:
         link = f"/sim-movil/{cid}/verificar/{notif['link'].split('/')[-1]}"
@@ -516,6 +523,7 @@ def mobile_poll(n, cid, path):
             dcc.Link('Verificar', href=link, className='mobile-btn')
         ]))
         marcar_notificacion_leida(notif['notificacion_id'])
+    
     return cards
 
 
