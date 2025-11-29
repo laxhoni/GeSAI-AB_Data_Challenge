@@ -204,13 +204,18 @@ python app.py
 ## 2. Contexto y Definición del Problema (Background)
 * **2.1. El Reto del AB Data Challenge:**
 Challenge 3: **Fugas de agua y experiencia del cliente**
+
 La gestión eficiente de las fugas de agua representa un desafío fundamental que impacta directamente en la experiencia de los clientes.
+
 Cada incidente presenta características particulares que se reflejan en los patrones de consumo y generan diferentes respuestas por parte de los usuarios.
 
-Este desafío busca profundizar en la comprensión de las tipologías de fugas y su relación con la experiencia del cliente, desde su detección hasta la resolución. El objetivo es evolucionar hacia una gestión más eficiente y proactiva de estas incidencias, mejorando tanto la conservación de los recursos hídricos como la satisfacción de los usuarios.
+Este desafío busca profundizar en la comprensión de las tipologías de fugas y su relación con la experiencia del cliente, desde su detección hasta la resolución. 
+El objetivo es evolucionar hacia una gestión más eficiente y proactiva de estas incidencias, mejorando tanto la conservación de los recursos hídricos como la satisfacción de los usuarios.
 
 * **2.2. Problemática Detectada:**
+  
 En la actualidad, la empresa Aigües de Barcelona y otras empresas encargadas de la gestión del agua comparten unos antecedentes similares: 
+
 - Detección y/o gestión ineficiente de las fugas de agua u otras anomalías relacionadas con el consumo.
 - Comunicación poco satisfactoria debida a una baja fluidez o eficacia a través de alertas no optimizadas en términos de tiempo y cercanía con el cliente.
 - Dependencia del CRM de usuarios: A la hora de comunicarse con el cliente cuando se detecta una fuga, el usuario debe estar registrado en el Área de usuarios de Aigües de Barcelona.
@@ -218,16 +223,34 @@ En la actualidad, la empresa Aigües de Barcelona y otras empresas encargadas de
 Estos antecedentes repercuten directamente en la sostenibilidad debido a la pérdida de recursos hídricos así como en la experiencia de los clientes con la empresa, en términos de confianza y satisfacción y ponen en manifiesto los retos y necesidades a los que se enfrentan este tipo de empresas. Por una parte, destacamos la necesidad de mejora en la detección y gestión de forma eficiente de las fugas de agua así como cualquier consumo anómalo en el consumo. Por otra parte, lograr una comunicación transparente, fluida, eficaz y cercana con los clientes.
  
 * **2.3. Validación de Mercado (Estudio Inicial):**
-Antes de desarrollar la solución que se explicará en los siguientes puntos, el equipo GeSAI ha desarrollado un estudio de mercado a través de un sistema de encuestas de Google. A través de esta metodología hemos podido analizar y comprender cual es el punto de partida de nuestro proyecto, detectar las preocupaciones de los usuarios y la opinión de los mismos sobre la solución GeSAI.
+Antes de desarrollar la solución que se explicará en los siguientes puntos, el equipo GeSAI ha desarrollado un estudio de mercado a través de un sistema de encuestas de Google.
+A través de esta metodología hemos podido analizar y comprender cual es el punto de partida de nuestro proyecto, detectar las preocupaciones de los usuarios y la opinión de los mismos sobre la solución GeSAI.
+
 Se puede acceder a la encuesta a través del siguiente enlace: https://forms.gle/hEXmXkqDExmNg1TSA
 
 INSIGHTSSSS???
 
 ## 3. Solución Propuesta y Objetivos
+
 * **3.1. Descripción del Producto (MVP):**
+  
 Para dar solución a las necesidades descritas anteriormente, os presentamos nuestra propuesta de proyecto: GesAI, una innovadora plataforma de gestión automatizada de incidencias a través de agentes inteligentes, especializada en fugas que abarca desde la detección y evaluación de dichas incidencias a través de técnicas basadas en Data Science y Machine Learning; la comunicación efectiva y proactiva con el cliente a través de un sistema de alertas y doble verificación con el objetivo de minimizar los riesgos en términos de sostenibilidad y economía del cliente; la elaboración automatizada de informes y visualizaciones de los resultados obtenidos para cada una de las incidencias. Todo ello enmarcado en un entorno seguro de los datos a través técnicas de ciberseguridad y criptografía basadas en AES en modo Galois/Counter Mode y Firma digital con RSA y padding PSS.
 
+Respecto al mercado objetivo, GesAI se centra en empresas encargadas de la gestión del agua y servicios públicos (Aigües de Barcelona), así como clientes domésticos o industriales con acceso a agua en las inmediaciones de la ciudad de Barcelona, los cuales valoren una comunicación cara, ágil y segura sobre su consumo y reducción de riesgos de incidencias.
+
+Respecto al modelo de negocio, se ha optado por un modelo B2B2C, en el que la empresa implementa nuestra plataforma GesAI con el objetivo de mejorar su eficiencia en la gestión de incidencias así como maximizando la satisfacción del cliente. Para ello, estamos guiando el proyecto para que nuestro MVP sea escalable y se pueda adaptar a cualquier empresa ofreciendo un servicio SaaS modular.
+
+
 * **3.2. Objetivos del Proyecto:**
-    * **Negocio:** Optimización de recursos y reducción de costes operativos.
-    * **Social:** Garantizar que la alerta llegue a todos, independientemente de su tecnología.
-    * **Técnico:** Procesamiento escalable de Big Data en tiempo real.
+  
+El principal objetivo del equipo GeSAI es gestionar y desarrollar la plataforma GeSAI con los parámetros definidos del Data Challenge de Aigües de Barcelona, garantizando la máxima eficiencia y rigor en la ejecución. Esta plataforma debe mejorar la gestión de incidencias y la experiencia con el cliente mediante:
+
+- Automatización del flujo de alertas e informes: Este punto se centra en la eficiencia y la toma de decisiones basada en datos, eliminando la intervención humana en las etapas de detección y documentación, ahorrando tiempo y movilidad. 
+
+- Comunicación inmediata y segura entre el cliente y la empresa: Transformar una situación negativa en una situación más transparente y de confianza, siempre bajo rigurosos estándares de seguridad.
+
+- Feedback del cliente para una mejora continua: Este evento cierra el ciclo de gestión de la incidencia y asegura que el sistema GeSAI no se quede estático, sino que aprenda y evolucione con cada interacción. Así mismo se implementa una doble verificación de la incidencia por parte del cliente y una guía de actuación para minimizar los riesgos en función de la incidencia.
+
+El objetivo final es reducir el tiempo de respuesta, pérdidas de agua e incidencias recurrentes, a la vez que genera confianza y se maximiza la eficiencia del sistema para minimizar riesgos.
+
+
