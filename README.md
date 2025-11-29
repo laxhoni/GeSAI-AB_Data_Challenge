@@ -203,6 +203,7 @@ python app.py
 
 ## 2. Contexto y Definición del Problema (Background)
 * **2.1. El Reto del AB Data Challenge:**
+* 
 Challenge 3: **Fugas de agua y experiencia del cliente**
 
 La gestión eficiente de las fugas de agua representa un desafío fundamental que impacta directamente en la experiencia de los clientes.
