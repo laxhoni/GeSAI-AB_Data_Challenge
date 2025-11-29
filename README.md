@@ -195,3 +195,39 @@ python app.py
 * **9.2. Enlace al Repositorio:** Código fuente.
 * **9.3. Guía Rápida de Uso:** Instrucciones para ejecutar la simulación.
 
+
+## 1. Resumen Ejecutivo (Executive Summary)
+* **1.1. Visión General:** Qué es GeSAI y qué problema resuelve (Detección proactiva + Inclusión social).
+* **1.2. Cifras Clave:** Resumen de impacto (84% Precisión, 68% Reducción de Falsas Alarmas, 100% Cobertura de Clientes).
+* **1.3. Valor Diferencial:** La combinación de IA avanzada con un canal de comunicación híbrido (Digital/Analógico).
+
+## 2. Contexto y Definición del Problema (Background)
+* **2.1. El Reto del AB Data Challenge:**
+Challenge 3: **Fugas de agua y experiencia del cliente**
+La gestión eficiente de las fugas de agua representa un desafío fundamental que impacta directamente en la experiencia de los clientes.
+Cada incidente presenta características particulares que se reflejan en los patrones de consumo y generan diferentes respuestas por parte de los usuarios.
+
+Este desafío busca profundizar en la comprensión de las tipologías de fugas y su relación con la experiencia del cliente, desde su detección hasta la resolución. El objetivo es evolucionar hacia una gestión más eficiente y proactiva de estas incidencias, mejorando tanto la conservación de los recursos hídricos como la satisfacción de los usuarios.
+
+* **2.2. Problemática Detectada:**
+En la actualidad, la empresa Aigües de Barcelona y otras empresas encargadas de la gestión del agua comparten unos antecedentes similares: 
+- Detección y/o gestión ineficiente de las fugas de agua u otras anomalías relacionadas con el consumo.
+- Comunicación poco satisfactoria debida a una baja fluidez o eficacia a través de alertas no optimizadas en términos de tiempo y cercanía con el cliente.
+- Dependencia del CRM de usuarios: A la hora de comunicarse con el cliente cuando se detecta una fuga, el usuario debe estar registrado en el Área de usuarios de Aigües de Barcelona.
+
+Estos antecedentes repercuten directamente en la sostenibilidad debido a la pérdida de recursos hídricos así como en la experiencia de los clientes con la empresa, en términos de confianza y satisfacción y ponen en manifiesto los retos y necesidades a los que se enfrentan este tipo de empresas. Por una parte, destacamos la necesidad de mejora en la detección y gestión de forma eficiente de las fugas de agua así como cualquier consumo anómalo en el consumo. Por otra parte, lograr una comunicación transparente, fluida, eficaz y cercana con los clientes.
+ 
+* **2.3. Validación de Mercado (Estudio Inicial):**
+Antes de desarrollar la solución que se explicará en los siguientes puntos, el equipo GeSAI ha desarrollado un estudio de mercado a través de un sistema de encuestas de Google. A través de esta metodología hemos podido analizar y comprender cual es el punto de partida de nuestro proyecto, detectar las preocupaciones de los usuarios y la opinión de los mismos sobre la solución GeSAI.
+Se puede acceder a la encuesta a través del siguiente enlace: https://forms.gle/hEXmXkqDExmNg1TSA
+
+INSIGHTSSSS???
+
+## 3. Solución Propuesta y Objetivos
+* **3.1. Descripción del Producto (MVP):**
+Para dar solución a las necesidades descritas anteriormente, os presentamos nuestra propuesta de proyecto: GesAI, una innovadora plataforma de gestión automatizada de incidencias a través de agentes inteligentes, especializada en fugas que abarca desde la detección y evaluación de dichas incidencias a través de técnicas basadas en Data Science y Machine Learning; la comunicación efectiva y proactiva con el cliente a través de un sistema de alertas y doble verificación con el objetivo de minimizar los riesgos en términos de sostenibilidad y economía del cliente; la elaboración automatizada de informes y visualizaciones de los resultados obtenidos para cada una de las incidencias. Todo ello enmarcado en un entorno seguro de los datos a través técnicas de ciberseguridad y criptografía basadas en AES en modo Galois/Counter Mode y Firma digital con RSA y padding PSS.
+
+* **3.2. Objetivos del Proyecto:**
+    * **Negocio:** Optimización de recursos y reducción de costes operativos.
+    * **Social:** Garantizar que la alerta llegue a todos, independientemente de su tecnología.
+    * **Técnico:** Procesamiento escalable de Big Data en tiempo real.
