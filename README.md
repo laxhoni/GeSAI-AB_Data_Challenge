@@ -1,5 +1,15 @@
+![Banner](docs/banner_challenge.png)
+
 # GeSAI: Gestió Segura i Automatitzada d'Incidències - Challenge final report
-> **Aigües de Barcelona Data Challenge** | Team GeSAI | UPF
+> **Aigües de Barcelona Data Challenge** | Team 202.E GeSAI | Universitat Pompeu Fabra
+
+> Project Core Team members:
+- Jhonatan Barcos (Project representative)
+- Oscar Sanz
+- Omar Abdellah
+- David Casillas
+- Martí Vera
+
 
 # Índice
 ## 1. Resumen Ejecutivo (Executive Summary)
