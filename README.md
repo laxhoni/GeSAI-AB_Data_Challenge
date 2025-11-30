@@ -503,3 +503,131 @@ GeSAI transforma el modelo tradicional de gestión de incidencias.
 - **Seguridad por Diseño (Security by Design):** En un entorno de IoT, la confianza es clave. Aunque transparente para el usuario, la arquitectura está preparada para el cifrado de reportes y la anonimización de datos sensibles en el procesamiento con Dask.
 
 ---
+
+# 7. Gestión del Proyecto (Project Management)
+
+---
+
+### 7.1. Metodología: Aplicación híbrida PM²/Agile (Iteraciones).
+
+La ejecución de GeSAI se abordó con una **Metodología Híbrida PM²/Agile**, buscando la estructura de un marco formal (PM²) para la planificación y documentación, combinada con la **flexibilidad de Agile (Iteraciones)** para la rápida entrega del MVP.
+
+* **PM² (Project Management Methodology):** Se utilizó para definir el *scope*, establecer la estructura de los *work packages* (Ingeniería de Datos, Modelado, Arquitectura) y asegurar la trazabilidad del progreso y los entregables.
+* **Agile (Iteraciones):** El desarrollo del código (limpieza de datos, *feature engineering* y entrenamiento de LightGBM) se realizó en **ciclos cortos (Sprints)**, lo que permitió:
+    * **Validación Temprana:** Se pudo probar la viabilidad del modelo predictivo y la integración de las fuentes de datos casi en paralelo.
+    * **Respuesta a Retos:** La adaptación al bloqueo de memoria RAM (ver 7.2) fue posible gracias a la naturaleza iterativa y adaptable de la metodología.
+
+---
+
+### 7.2. Retos y Soluciones: Cómo se superó el bloqueo de memoria RAM (MemoryError) mediante reingeniería de datos.
+
+El principal desafío técnico enfrentado fue el **bloqueo de memoria RAM ($\text{MemoryError}$)**, derivado del manejo del *dataset* principal de telelectura de más de **75 millones de registros** y los sucesivos *merges* con las fuentes de datos externas.
+
+| Reto (Problem) | Solución (Strategy) |
+| :--- | :--- |
+| **Bloqueo de Memoria RAM ($\text{MemoryError}$):** Pandas no podía gestionar la ingesta, limpieza y el *feature engineering* del *dataset* masivo. | **Reingeniería de Datos con Dask:** Se migró la arquitectura de procesamiento de *in-memory* (Pandas) a un **procesamiento distribuido** mediante **Dask**. |
+| **Volatilidad de la Memoria:** Los *merges* con las fuentes de Open Data requerían una gran cantidad de memoria RAM. | **Optimización y Gestión del Ciclo de Vida:** Se implementó *lazy evaluation* en Dask y se forzó la **recolección de basura (*Garbage Collection*)** inmediatamente después de cada fusión de datos (`gc.collect()`) para liberar el espacio en el *heap* de la RAM, asegurando que solo el *dataset* optimizado para ML permaneciera en memoria. |
+| **Latencia en la Carga Inicial:** El tiempo de lectura y preparación del dato era excesivo. | **Particionado y Formato Binario:** Se utilizó el formato **Parquet** con **particionado** del *dataset* final, lo que redujo drásticamente el tiempo de carga para el entrenamiento de LightGBM. |
+
+---
+
+### 7.3. Asunciones y Restricciones: Limitaciones de hardware y disponibilidad de datos históricos.
+
+La viabilidad del MVP se construyó sobre las siguientes premisas y limitaciones.
+
+* **Asunciones (Assumptions):**
+    * **Calidad de los Datos de Telelectura:** Se asumió que los datos del *AB Data Challenge* reflejaban consumos reales y que la etiqueta de fuga (`target`) era un indicador fiable.
+    * **Disponibilidad de Datos Abiertos:** Se asumió que las fuentes de **Open Data BCN** son estables y representativas para la contextualización geográfica y socioeconómica.
+    * **Comunicación Digital/Analógica:** Se asumió que la generación de la **Carta Postal** es una alternativa viable y efectiva en la realidad para clientes no digitales.
+* **Restricciones (Constraints):**
+    * **Limitaciones de Hardware:** El desarrollo se realizó en un entorno local con **recursos limitados** (una única máquina), lo que obligó a implementar la estrategia Big Data con Dask para simular un entorno distribuido sin tener acceso a un *cluster* real.
+    * **Disponibilidad de Datos Históricos:** Solo se dispuso de un rango de tiempo específico para el entrenamiento, limitando la validación del modelo a eventos extremos a largo plazo.
+    * **Entorno Simulacro:** El proyecto actual se basa en un **simulador de *backend***. La integración con sistemas de facturación y APIs de envío de notificaciones reales quedó fuera del alcance del MVP.
+
+---
+
+# 8. Conclusiones y Próximos Pasos 
+
+---
+
+### 8.1. Conclusiones: Validación de la viabilidad técnica y comercial del MVP.
+
+El proyecto GeSAI ha validado de manera contundente su **viabilidad técnica y comercial** con el desarrollo del MVP:
+
+* **Viabilidad Técnica:** Se demostró la capacidad de procesar y enriquecer un **volumen masivo de datos (75M+ registros)** en un entorno limitado, y se implementó un modelo de **IA (LightGBM)** que alcanza una **Precisión del 84%** en la detección de fugas. La aplicación del Meta-Análisis (Semáforo de Riesgo) asegura la gestión proactiva de la criticidad.
+* **Viabilidad Comercial y de Impacto:** La solución resuelve la **doble problemática** del *challenge*: mejora la **eficiencia hídrica** y operacional (reducción de falsas alarmas) e incorpora una solución innovadora de **inclusión social** al cerrar la brecha digital con la generación automática de cartas postales.
+
+---
+
+### 8.2. Roadmap Futuro (Next Steps)
+
+El futuro de GeSAI se centra en el escalado, la seguridad de nivel productivo y la integración sistémica:
+
+* **Implementación de Ciberseguridad:**
+    * **Cifrado de Datos Sensibles:** Implementar **AES en modo Galois/Counter Mode (GCM)** para el cifrado de datos críticos en tránsito y reposo.
+    * **Integridad de Documentos:** Implementar la **Firma Digital con RSA y *padding* PSS** en los reportes e informes técnicos PDF para garantizar su autenticidad e inalterabilidad.
+* **Despliegue en Cloud (AWS/Azure):**
+    * Migrar el *backend* de Dask y el *worker* de inferencia a una infraestructura escalable en la nube, preferentemente **AWS o Azure**, utilizando servicios como **AWS SageMaker** o **Azure Machine Learning** para el entrenamiento y despliegue del modelo en contenedores (*Docker*).
+* **Integración con sistemas de facturación reales:**
+    * Conectar el sistema de alertas del *backend* con **APIs de envío de SMS/Email** y el **CRM** de la empresa (p. ej., SAP, Salesforce) para automatizar la comunicación de forma real y actualizar el estado de las pólizas y los contadores en tiempo real.
+
+---
+
+# 9. Anexos
+
+---
+
+### 9.1. Stack Tecnológico: Lista de librerías y herramientas
+
+El proyecto se construyó utilizando el siguiente *stack* de herramientas y librerías clave, priorizando la eficiencia, la escalabilidad y la **explicabilidad (XAI)**.
+
+| Categoría | Herramienta / Librería | Propósito |
+| :--- | :--- | :--- |
+| **Big Data / Data Engineering** | **Dask** | Procesamiento distribuido, gestión de la memoria RAM y *lazy evaluation* en *datasets* masivos. |
+| | **Pandas / NumPy** | Operaciones de limpieza, *Feature Engineering* y análisis de datos en memoria. |
+| | **Fastparquet** | Persistencia optimizada de datos en formato binario. |
+| **Machine Learning (IA Core)** | **LightGBM** | Algoritmo de *Gradient Boosting* de alto rendimiento para la clasificación multi-horizonte. |
+| | **Scikit-learn** | Métricas de validación (*Precision, Recall, F1-Score, AUC*), *pipelines* y *cross-validation*. |
+| | **SHAP** | Explicabilidad del Modelo (XAI), identificando las variables que impulsan cada predicción. |
+| **Arquitectura / Backend** | **SQLite** | Base de datos para persistir incidencias, notificaciones y clientes en el MVP. |
+| | **Python (`.py` scripts)** | Lógica de negocio, *workers* de simulación y motor de inferencia (`motor_gesai.py`). |
+| **Frontend / Visualización** | **Streamlit** | Desarrollo rápido del Dashboard de gestión en tiempo real (`app.py`). |
+| | **Plotly** | Generación de gráficas interactivas para el Dashboard y el Informe Técnico. |
+| **Generación de Reportes** | **FPDF** | Creación dinámica de los Informes Técnicos y Cartas Postales en PDF. |
+
+---
+
+### 9.2. Enlace al Repositorio: Código fuente
+
+> El código fuente completo, incluyendo los *notebooks* de entrenamiento, los *scripts* del *backend* y los datos sintéticos de simulación, está disponible públicamente en:
+>
+> `[INSERTE AQUÍ EL ENLACE DEL REPOSITORIO DE GITHUB]`
+
+---
+
+### 9.3. Guía Rápida de Uso: Instrucciones para ejecutar la simulación
+
+Para ejecutar la simulación completa del MVP, sigue los siguientes pasos:
+
+1.  **Clonar el Repositorio:**
+    ```bash
+    git clone [ENLACE_DEL_REPOSITORIO]
+    cd GeSAI
+    ```
+2.  **Preparar el Entorno (Entrenamiento *Offline*):**
+    * Ejecutar el *notebook* **`01_data_preprocessing.ipynb`** para cargar el *dataset* de 75M de registros, aplicar Dask y generar el archivo de entrada optimizado.
+    * Ejecutar el *notebook* **`02_model_training.ipynb`** para entrenar los 3 modelos LightGBM y generar los archivos `.joblib` y el CSV de simulación.
+    * Ejecutar el *script* **`setup_database.py`** para inicializar la BBDD SQLite (`gesai.db`).
+3.  **Ejecutar la Simulación (*Online*):**
+    * Abrir **dos terminales** simultáneamente.
+    * **Terminal 1 (Backend Worker):** Inicia el procesamiento de datos en tiempo real y la inferencia de la IA.
+        ```bash
+        python simulador_backend.py
+        ```
+    * **Terminal 2 (Frontend Dashboard):** Inicia la interfaz de gestión en Streamlit.
+        ```bash
+        streamlit run app.py
+        ```
+4.  **Interacción:** El *Dashboard* se abrirá automáticamente en tu navegador. Podrás ver cómo las incidencias aparecen a medida que el *worker* las detecta, permitiendo la interacción (descarga de informes, etc.).
+
+---
