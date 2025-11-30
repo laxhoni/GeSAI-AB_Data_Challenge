@@ -409,9 +409,59 @@ Demostración del funcionamiento del MVP mediante microservicios.
 
 ---
     
-* **5.3. Interfaces de Usuario:**
-    * **Dashboard de Empresa:** Panel de control en tiempo real para gestores.
-    * **Simulador Móvil:** Experiencia del cliente digital (Notificación Push + Encuesta).
-    * **Generador de Reportes:** Automatización de Informes Técnicos y Cartas Postales (PDF).
+## 5.3 Interfaces de Usuario
 
+### 📊 Dashboard de Empresa
+Panel de control en tiempo real para gestores internos.  
+Permite supervisar y gestionar las incidencias detectadas por la plataforma GeSAI.
+
+**Funciones principales:**
+- Visualización de incidencias activas en tiempo real.
+- Filtrado por severidad: Grave, Moderada, Carta pendiente.
+- Acceso al detalle de cada incidencia con datos del cliente.
+- Descarga del Informe Técnico en PDF.
+- Generación manual de la Carta Postal en PDF para clientes sin contacto digital.
+- Seguimiento del estado de verificación del cliente.
+
+📸 *Ejemplo de Dashboard:*  
+![Dashboard de Empresa](docs/images/dashboard.png)
+
+---
+
+### 📱 Simulador Móvil
+Recrea la experiencia del cliente final como si se tratara de una aplicación móvil.  
+Permite validar el flujo completo desde el punto de vista del cliente.
+
+**Características:**
+- Recepción de notificaciones push simuladas ante detección de fuga.
+- Vista de mensajes pendientes del cliente.
+- Redirección a la pantalla de verificación de incidencia mediante token único.
+- Formulario de 6 preguntas para ayudar al diagnóstico técnico.
+- Pantalla de confirmación tras enviar las respuestas.
+
+📸 *Ejemplo de Simulador Móvil:*  
+![Simulador Móvil](docs/simulador.png)
+
+---
+
+### 📄 Generador de Reportes (PDF)
+Módulo encargado de producir documentación oficial utilizada por el equipo de gestión.
+
+**Informe Técnico**
+- Se genera bajo demanda desde el Dashboard.
+- Incluye datos del cliente, descripción de la incidencia e histórico de consumos.
+- Exportado como `Informe_<polissa>.pdf`.
+📸 *Ejemplo de Reporte PDF:*  
+![Generador de Reportes](docs/Carta_Incidencia_53_69.pdf)
+
+**Carta Postal**
+- Disponible únicamente para clientes sin contacto digital.
+- Generada manualmente desde el Dashboard.
+- Exportada como `Carta_<polissa>.pdf`.
+📸 *Ejemplo de Carta Postal:*  
+![Generador de Cartas](docs/Informe_Tecnic_64_64.pdf)
+
+
+
+---
 
