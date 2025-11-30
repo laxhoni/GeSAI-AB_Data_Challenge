@@ -424,7 +424,7 @@ Permite supervisar y gestionar las incidencias detectadas por la plataforma GeSA
 - Seguimiento del estado de verificación del cliente.
 
 📸 *Ejemplo de Dashboard:*  
-![Dashboard de Empresa](docs/docs/dashboard.png)
+![Dashboard de Empresa](docs/dashboard.png)
 
 ---
 
