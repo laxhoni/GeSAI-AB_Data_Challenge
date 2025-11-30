@@ -1,7 +1,7 @@
 # GeSAI: Gestió Segura i Automatitzada d'Incidències - Challenge final report
 > **Aigües de Barcelona Data Challenge** | Team GeSAI | UPF
 
-## Índice
+# Índice
 ## 1. Resumen Ejecutivo (Executive Summary)
 
 ## 2. Contexto y Definición del Problema (Background)
@@ -44,7 +44,8 @@
 ## 9. Anexos
 * **9.1. Stack Tecnológico** 
 * **9.2. Enlace al Repositorio** 
-* **9.3. Guía Rápida de Uso** 
+* **9.3. Guía Rápida de Uso**
+* **9.4 Trazabilidad WBS**
 
 
 ## 1. Resumen Ejecutivo (Executive Summary)
