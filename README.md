@@ -92,7 +92,28 @@ A través de esta metodología hemos podido analizar y comprender cual es el pun
 
 Se puede acceder a la encuesta a través del siguiente enlace: https://forms.gle/hEXmXkqDExmNg1TSA
 
-INSIGHTSSSS???
+---
+
+### 📊 Resultados de la Encuesta Ciudadana (Validación)
+
+A continuación se presentan los 6 gráficos clave obtenidos de la encuesta "Percepción ciudadana sobre la gestión inteligente del Agua" (N=100+):
+
+| 1. Frecuencia de Revisión del Contador | 2. Preocupación Económica por Fugas |
+| :---: | :---: |
+| ![Gráfico 1 - Revisión Contador](docs/graficaencuesta1.jfif) | ![Gráfico 2 - Preocupación Económica](docs/graficaencuesta2.jfif) |
+| *La mayoría (63.6%) nunca revisa su contador, viviendo desconectados de su consumo.* | *Existe una alta ansiedad (65.9% Mucho/Bastante) por el impacto económico ("Bill Shock").* |
+
+| 3. Interés en el Servicio de Alerta (Valor 1-5) | 4. Impacto en la Imagen de la Empresa |
+| :---: | :---: |
+| ![Gráfico 3 - Valoración Servicio](docs/graficaencuesta3.jfif) | ![Gráfico 4 - Imagen Empresa](docs/graficaencuesta4.jfif) |
+| *El 84.1% valora muy positivamente (4 o 5) un servicio de alerta proactiva y gratuita.* | *El 90.9% afirma que su opinión sobre la empresa mejoraría (mucho o algo) con este sistema.* |
+
+| 5. Canal de Notificación Preferido | 6. Conocimiento de la Brecha Digital |
+| :---: | :---: |
+| ![Gráfico 5 - Canal Preferido](docs/graficaencuesta5.jfif) | ![Gráfico 6 - Brecha Digital](docs/graficaencuesta6.jfif) |
+| *Preferencia por el móvil (55.7%), pero un 39.8% aún prefiere llamada telefónica.* | *Un 86.4% conoce a personas mayores que tendrían dificultades con una app, validando la necesidad de cartas.* |
+
+---
 
 ## 3. Solución Propuesta y Objetivos
 
