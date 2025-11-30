@@ -449,8 +449,6 @@ def update_filter(n):
      Input({'type': 'btn-download-report', 'index': ALL}, 'n_clicks')],
     prevent_initial_call=True
 )
-
-
 def handle_details(n_card, n_close, n_down):
     tid = ctx.triggered_id
     if not tid:
@@ -459,10 +457,6 @@ def handle_details(n_card, n_close, n_down):
     # CERRAR
     if isinstance(tid, dict) and tid.get('type') == 'btn-close-details':
         return None
-
-    # ⚠️ IMPORTANTE:
-    # Eliminamos completamente la lógica antigua que generaba informes desde el callback.
-    # Ya no existe "btn-download-report". Todo ahora es descarga por ruta Flask.
 
     # ABRIR DETALLES
     if isinstance(tid, dict) and tid.get('type') == 'incidencia-card':
@@ -475,34 +469,54 @@ def handle_details(n_card, n_close, n_down):
 
         inc, cli = data['datos_incidencia'], data['datos_cliente']
 
-        # --- BOTONES DINÁMICOS ---
-        botones = []
-
+        # --- BOTONES DINÁMICOS (Versión Horizontal) ---
+        botones_lista = []
         tiene_contacto = cli.get("email") or cli.get("telefono")
 
-        if tiene_contacto:
-            botones.append(
-                html.A(
-                    "Descargar Informe Técnico",
-                    href=f"/download/informe/{inc['id']}",
-                    target="_blank",
-                    rel="noopener noreferrer",
-                    className="btn-block",
-                    style={"textDecoration": "none", "marginTop": "12px"}
-                )
-        )
+        # Estilo común para los botones
+        estilo_btn = {
+            "flex": "1",               
+            "textAlign": "center",
+            "padding": "10px",
+            "borderRadius": "6px",
+            "textDecoration": "none",
+            "color": "white",
+            "fontWeight": "500",
+            "fontSize": "0.9rem",
+            "display": "flex",          
+            "alignItems": "center",
+            "justifyContent": "center"
+        }
 
-        else:
-        # Cliente SIN contacto → sólo carta postal
-            botones.append(
-                html.A(
-                    "Generar Carta Postal",
-                    href=f"/download/carta/{inc['id']}",
-                    target="_blank",
-                    rel="noopener noreferrer",
-                    className="btn-block",
-                    style={"textDecoration": "none", "marginTop": "12px"}
-                )
+        # 1. Botón INFORME (Azul) - Siempre visible
+        btn_informe = html.A(
+            "📄 Informe Técnico",
+            href=f"/download/informe/{inc['id']}",
+            target="_blank",
+            rel="noopener noreferrer",
+            style={**estilo_btn, "backgroundColor": "#00599D"} 
+        )
+        botones_lista.append(btn_informe)
+
+        # 2. Botón CARTA (Gris) - Solo si no hay contacto
+        if not tiene_contacto:
+            btn_carta = html.A(
+                "📮 Carta Postal",
+                href=f"/download/carta/{inc['id']}",
+                target="_blank",
+                rel="noopener noreferrer",
+                style={**estilo_btn, "backgroundColor": "#6B7280", "marginLeft": "10px"} 
+            )
+            botones_lista.append(btn_carta)
+
+        # Contenedor para ponerlos uno al lado del otro
+        contenedor_botones = html.Div(
+            children=botones_lista,
+            style={
+                'display': 'flex', 
+                'marginTop': '20px', 
+                'width': '100%'
+            }
         )
 
         # --- RETURN PANEL DETALLES ---
@@ -527,12 +541,11 @@ def handle_details(n_card, n_close, n_down):
                         html.P(cli.get('direccion','-'))
                     ], md=6),
                 ]),
-                *botones  # ← aquí añadimos todos los botones dinámicos
+                contenedor_botones # <--- Aquí insertamos los botones horizontales
             ]
         )
 
     return no_update
-
 
 @callback(
     Output('div-notificaciones-movil', 'children'),

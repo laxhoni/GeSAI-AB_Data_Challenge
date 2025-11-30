@@ -207,3 +207,8 @@ body.dark-mode .filter.active { background: #3B82F6; color: white; }
     .right-column { order:1; }
     .mobile-frame { width:320px; height:700px; }
 }
+
+/* texto 'Filtrar estado' se vea en blanco en modo noche*/
+.dark-mode .filter-label {
+    color: #ffffff !important; 
+}

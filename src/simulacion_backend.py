@@ -1,4 +1,4 @@
-# src/simulador_backend.py
+# src/simulacion_backend.py
 
 import sys
 import os
