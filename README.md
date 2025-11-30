@@ -450,14 +450,16 @@ Módulo encargado de producir documentación oficial utilizada por el equipo de 
 **Informe Técnico**
 - Se genera bajo demanda desde el Dashboard.
 - Incluye datos del cliente, descripción de la incidencia e histórico de consumos.
-- Exportado como `Informe_<polissa>.pdf`.
+- Exportado como `Informe_<póliza>.pdf`.
+
 📸 *Ejemplo de Reporte PDF:*  
 ![Generador de Reportes](docs/Example_Report.png)
 
 **Carta Postal**
 - Disponible únicamente para clientes sin contacto digital.
 - Generada manualmente desde el Dashboard.
-- Exportada como `Carta_<polissa>.pdf`.
+- Exportada como `Carta_<póliza>.pdf`.
+
 📸 *Ejemplo de Carta Postal:*  
 ![Generador de Cartas](docs/Example_Postal.png)
 
