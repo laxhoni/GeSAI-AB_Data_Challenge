@@ -604,7 +604,7 @@ El proyecto se construyó utilizando el siguiente *stack* de herramientas y libr
 
 > El código fuente completo, incluyendo los *notebooks* de entrenamiento, los *scripts* del *backend* y los datos sintéticos de simulación, está disponible públicamente en:
 >
-> `[INSERTE AQUÍ EL ENLACE DEL REPOSITORIO DE GITHUB]`
+> `https://github.com/laxhoni/GeSAI-AB_Data_Challenge`
 
 ---
 
