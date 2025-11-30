@@ -332,6 +332,7 @@ La metodología desarrollada para GeSAI se fundamenta en un ciclo de vida de dat
 ## 5. Arquitectura del Sistema y Visualización (MVP)
 * **5.1. Arquitectura de Microservicios:**
 
+![Arquitectura de Microservicios](docs/Arquitectura%20de%20Servicios.png)
 
     
 * **5.2. Flujo de Funcionamiento (End-to-End):**
