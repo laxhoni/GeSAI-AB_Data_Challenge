@@ -251,13 +251,19 @@ def build_login_layout():
                 html.Label('Contraseña', className='form-label', style={'marginTop': '12px'}),
                 dcc.Input(id='input-password', type='password', placeholder='••••••••', className='form-input'),
 
-                html.Div(id='login-error', className='small-muted', style={'minHeight': '22px', 'marginTop': '8px'}),
+      
+                html.Div(
+                    "Introduce tu contraseña", 
+                    id='login-error', 
+                    className='small-muted', 
+                    style={'minHeight': '22px', 'marginTop': '8px', 'color': '#6b7280'} # Color gris suave
+                ),
+
                 html.Button("Acceder al Sistema", id='btn-login', className='btn-primary'),
                 html.Div("Credenciales Demo: empresa@gesai.com / 1234", className='login-footer-note')
             ])
         ])
     ])
-
 
 def build_empresa_layout(session_data):
     nombre_usuario = session_data.get('nombre', 'Admin')
@@ -326,16 +332,27 @@ app.layout = html.Div([
     [Output('session-store', 'data'),
      Output('login-error', 'children'),
      Output('url', 'pathname')],
-    Input('btn-login', 'n_clicks'),
+    Input('btn-login', 'n_clicks'),  # <--- Escuchamos el click
     [State('input-usuario', 'value'), State('input-password', 'value')],
-    prevent_initial_call=True
+    prevent_initial_call=True  # <--- 1. IMPORTANTE: Evita que se ejecute al cargar la página
 )
 def login(n, u, p):
+    # --- 2. IMPORTANTE: Bloque de seguridad extra ---
+    # Si n es None o 0, significa que nadie ha pulsado el botón aún.
+    # Devolvemos "no_update" para NO cambiar nada en la pantalla.
+    if not n:
+        return no_update, no_update, no_update
+    # -----------------------------------------------
+
     res = verificar_credenciales(u, p)
+    
     if res.get('success'):
         return {'logged_in': True, 'rol': 'Empresa', 'nombre': res.get('nombre')}, None, '/dashboard'
-    return no_update, html.Div(res.get('message')), no_update
-
+    
+    # Solo si ha fallado REALMENTE (después de clicar), mostramos el error
+    mensaje_error = html.Span("⚠ Contraseña incorrecta", style={'color': '#dc3545', 'fontWeight': 'bold'})
+    
+    return no_update, mensaje_error, no_update
 
 @callback(
     [Output('session-store', 'data', allow_duplicate=True),
@@ -589,16 +606,57 @@ def mobile_poll(n, cid, path):
     prevent_initial_call=True
 )
 def submit_survey(n, token, resps, path):
-    if not token or any(r is None for r in resps):
-        return html.P("Complete todo", className='survey-result-error'), no_update
-    validar_token_y_registrar(token, {})
-    if path:
-        parts = path.split('/')
-        if len(parts) >= 3:
-            return no_update, f"/{parts[1]}/{parts[2]}/confirmacion"
-    return no_update, no_update
-
-
+    # 1. Validación básica
+    if not token:
+        return html.P("Error: Token no encontrado", className='survey-result-error'), no_update
+        
+    if any(r is None for r in resps):
+        return html.P("⚠️ Por favor, responda a todas las preguntas antes de enviar.", className='survey-result-error'), no_update
+    
+    # 2. Definición de preguntas (Deben coincidir con las del layout _build_survey_layout)
+    # IMPORTANTE: El orden de esta lista debe ser el mismo que en el layout visual.
+    preguntas_texto = [
+        "1. ¿Ha notado un sonido de agua corriendo (siseo)?",
+        "2. ¿Algún grifo o cisterna pierde agua?",
+        "3. ¿El contador se mueve con todo cerrado?",
+        "4. ¿Ha detectado humedades recientes?",
+        "5. ¿Ha habido obras recientes?",
+        "6. ¿Ha realizado usted actividad de alto consumo (llenar piscina, riego...)?",
+        "7. ¿El proceso de notificación ha sido claro?"
+    ]
+    
+    # 3. Empaquetar datos: Unimos Pregunta + Respuesta
+    datos_encuesta = []
+    # Usamos zip para unir la pregunta i con la respuesta i
+    # (Aseguramos no salirnos de rango si hubiera discrepancia)
+    for i, respuesta in enumerate(resps):
+        if i < len(preguntas_texto):
+            pregunta_actual = preguntas_texto[i]
+        else:
+            pregunta_actual = f"Pregunta {i+1}"
+            
+        datos_encuesta.append({
+            'id': i+1,
+            'pregunta': pregunta_actual,
+            'respuesta': respuesta  # Esto será 'SI', 'NO', 'NO_SE'
+        })
+    
+    # 4. Enviar al Motor
+    resultado = validar_token_y_registrar(token, datos_encuesta)
+    
+    # 5. Gestionar respuesta
+    if resultado.get('success'):
+        # Si todo va bien, redirigir a confirmación
+        if path:
+            parts = path.split('/')
+            # Esperamos estructura /sim-movil/{id}/verificar/{token}
+            # Redirigimos a /sim-movil/{id}/confirmacion
+            if len(parts) >= 3:
+                return no_update, f"/{parts[1]}/{parts[2]}/confirmacion"
+        return html.P("Encuesta enviada correctamente.", style={'color':'green'}), no_update
+    else:
+        # Error del backend (token inválido, error SQL, etc.)
+        return html.P(f"Error: {resultado.get('message')}", className='survey-result-error'), no_update
 # CLIENTSIDE: toggle dark mode (más rápido, sin roundtrip)
 app.clientside_callback(
     """

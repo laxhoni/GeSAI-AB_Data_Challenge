@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 import time
+import json
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUTA_CARTAS = os.path.join(BASE_DIR, "generated_reports", "regular_mails")
@@ -150,7 +151,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     pdf.set_font('Helvetica', '', 8)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 8, f"REF: #{incidencia_id} | DATA: {fecha_hoy}", 0, 1, 'R')
-    pdf.ln(5)
+    #pdf.ln(5)
 
     # --- 1. INFORMACIÓN DEL CLIENTE ---
     pdf.section_title("1. Dades del Punt de Subministrament")
@@ -240,7 +241,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
         pdf.set_text_color(0, 0, 0)
         pdf.cell(60, 5, f"{promedio:.2f} L/h", 0, 0, 'C')
         
-        pdf.ln(10) # Salir de la caja
+        pdf.ln(7) # Salir de la caja
         
         # Gráfica
         chart_path = f"temp_chart_{incidencia_id}.png"
@@ -258,10 +259,63 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
             # 'C' al final centra el texto respecto a la página
             pdf.cell(0, 5, "Fig 1. Dades de telelectura del comptador: consum real (m³) vs temps.", 0, 1, 'C') 
             # ---------------------------------------
-
             os.remove(chart_path)
         except Exception as e:
             pdf.cell(0, 5, f"Error gràfica: {e}", 0, 1)
+            
+    # --- 4. Doble verificación del cliente ---
+    encuesta_raw = datos_incidencia.get('encuesta_resultado')
+    
+    if encuesta_raw:
+        try:
+            # 1. Parsear el JSON guardado en BBDD
+            respuestas = json.loads(encuesta_raw)
+            
+            # Si es una lista o dict, aseguramos formato.
+            # Asumiremos que desde app.py enviamos una lista de dicts: [{'pregunta': '...', 'respuesta': 'SI'}]
+            # O un dict simple. Adaptamos la visualización:
+            
+            pdf.ln(5) # Espacio antes de la nueva sección
+            pdf.section_title("4. Doble verificació del client (App Mòbil)")
+            
+            # Fondo gris suave para las respuestas
+            pdf.set_fill_color(250, 250, 250)
+            
+            # Encabezados de tabla
+            pdf.set_font('Helvetica', 'B', 8)
+            pdf.set_text_color(100, 100, 100)
+            pdf.cell(140, 6, "PREGUNTA REALITZADA", 0, 0, 'L', True)
+            pdf.cell(30, 6, "RESPOSTA", 0, 1, 'C', True)
+            
+            pdf.set_font('Helvetica', '', 8)
+            pdf.set_text_color(40, 40, 40)
+            
+            # Iterar respuestas. 
+            # NOTA: Ajustar según cómo enviemos los datos desde app.py. 
+            # Aquí asumo que 'respuestas' es una lista de objetos o dict con claves numericas.
+            # Para mayor robustez, vamos a asumir que es una lista de textos.
+            
+            if isinstance(respuestas, list):
+                for item in respuestas:
+                    preg = item.get('pregunta', '-')[:75] + "..." if len(item.get('pregunta','')) > 75 else item.get('pregunta', '-')
+                    resp = str(item.get('respuesta', '-')).upper()
+                    
+                    # Colorear respuesta si es SI (Alerta)
+                    pdf.set_text_color(40, 40, 40)
+                    if resp in ['SI', 'SÍ']:
+                        pdf.set_text_color(*COLOR_ALERTA) # Rojo para los SI
+                        pdf.set_font('Helvetica', 'B', 8)
+                    else:
+                        pdf.set_font('Helvetica', '', 8)
+
+                    pdf.cell(140, 6, f"-> {preg}", 0, 0, 'L')
+                    pdf.cell(30, 6, resp, 0, 1, 'C')
+                    
+            pdf.ln(5)
+            
+        except Exception as e:
+            print(f"Error parseando encuesta para PDF: {e}")         
+            
     # Guardar
     output_dir = '../generated_reports/technical_reports/'
     os.makedirs(output_dir, exist_ok=True)

@@ -9,6 +9,7 @@ import numpy as np
 import joblib
 from faker import Faker
 from reports_manager import generar_carta_postal_pdf, generar_informe_tecnico_pdf
+import json
 
 # --- 1. CONFIGURACIÓN ---
 DB_NAME = 'gesai.db'
@@ -229,14 +230,46 @@ def marcar_notificacion_leida(nid):
     finally: conn.close()
 
 def validar_token_y_registrar(token, respuestas):
+    """
+    Valida el token y guarda las respuestas de la encuesta en formato JSON
+    dentro de la columna 'encuesta_resultado'.
+    """
     conn = _conectar_bbdd()
+    if not conn: return {'success': False, 'message': 'Error de conexión'}
+
     try:
         cur = conn.cursor()
+
+        # 1. Verificar si el token existe
         cur.execute("SELECT incidencia_id FROM tokens_verificacion WHERE token=?", (token,))
         row = cur.fetchone()
-        if not row: return {'success': False, 'message': 'Token inválido'}
-        cur.execute("UPDATE incidencias SET verificacion='VERIFICADO (Encuesta)' WHERE id=?", (row['incidencia_id'],))
+
+        if not row: 
+            return {'success': False, 'message': 'Token inválido o ya utilizado'}
+
+        inc_id = row['incidencia_id']
+
+        # 2. Convertir el diccionario/lista de respuestas a Texto JSON
+        respuestas_json = json.dumps(respuestas, ensure_ascii=False)
+
+        # 3. Actualizar la incidencia: 
+        #    - Cambiamos estado de verificación
+        #    - Guardamos el JSON en la nueva columna
+        cur.execute("""
+            UPDATE incidencias 
+            SET verificacion='VERIFICADO (Encuesta)', 
+                encuesta_resultado = ? 
+            WHERE id=?
+        """, (respuestas_json, inc_id))
+
+        # 4. Eliminar el token para que no se pueda volver a usar
         cur.execute("DELETE FROM tokens_verificacion WHERE token=?", (token,))
+
         conn.commit()
         return {'success': True, 'message': 'OK'}
-    finally: conn.close()
+
+    except Exception as e:
+        print(f"Error en validar_token_y_registrar: {e}")
+        return {'success': False, 'message': str(e)}
+    finally:
+        conn.close()
