@@ -126,74 +126,48 @@ python app.py
 # Challenge Final Report (GeSAI) 
 ## Índice
 ## 1. Resumen Ejecutivo (Executive Summary)
-* **1.1. Visión General:** Qué es GeSAI y qué problema resuelve (Detección proactiva + Inclusión social).
-* **1.2. Cifras Clave:** Resumen de impacto (84% Precisión, 68% Reducción de Falsas Alarmas, 100% Cobertura de Clientes).
-* **1.3. Valor Diferencial:** La combinación de IA avanzada con un canal de comunicación híbrido (Digital/Analógico).
 
 ## 2. Contexto y Definición del Problema (Background)
-* **2.1. El Reto del AB Data Challenge:** Descripción del ámbito "Detección de consumos anómalos" y "Experiencia de cliente".
-* **2.2. Problemática Detectada:**
-    * Ineficiencia operativa por falsas alarmas.
-    * Riesgo de exclusión para colectivos vulnerables (Brecha Digital).
-* **2.3. Validación de Mercado (Estudio Inicial):**
-    * Resultados de la encuesta ciudadana (N=100+).
-    * Evidencia de la necesidad del canal postal (Datos sobre gestión de suministros para mayores).
-    * Nivel de aceptación de la IA en la gestión del agua.
+* **2.1. El Reto del AB Data Challenge**
+* **2.2. Problemática Detectada**
+* **2.3. Validación de Mercado (Estudio Inicial)**
+
 
 ## 3. Solución Propuesta y Objetivos
-* **3.1. Descripción del Producto (MVP):** Sistema integral de monitorización, detección y notificación multicanal.
-* **3.2. Objetivos del Proyecto:**
-    * **Negocio:** Optimización de recursos y reducción de costes operativos.
-    * **Social:** Garantizar que la alerta llegue a todos, independientemente de su tecnología.
-    * **Técnico:** Procesamiento escalable de Big Data en tiempo real.
+* **3.1. Descripción del Producto (MVP)**
+* **3.2. Objetivos del Proyecto**
+
 
 ## 4. Metodología Técnica: De los Datos al Modelo
-* **4.1. Ingeniería de Datos (Data Engineering):**
-    * Fuentes de Datos: Dataset Oficial (75M registros) + Open Data (AEMET, Catastro).
-    * Estrategia Big Data: Procesamiento distribuido con Dask para superar limitaciones de memoria.
-    * **Creación de Nuevos Datos (Feature Engineering):** Desarrollo de variables sintéticas (Lags, Rolling Windows, Ratios de Desviación) para capturar la temporalidad.
-* **4.2. Modelado Predictivo (The AI Core):**
-    * **Selección del Modelo:** Justificación del cambio de LSTM a LightGBM (Eficiencia vs. Coste computacional).
-    * Estrategia de Entrenamiento: Clasificación Multi-Horizonte (Modelos a 1h, 24h y 7 días).
-    * Optimización: Búsqueda de umbral óptimo (Threshold Tuning) para maximizar el F1-Score.
-* **4.3. Meta-Análisis de Decisiones:**
-    * Lógica de Negocio: Implementación de reglas basadas en "Deltas" (Tendencias de probabilidad) para clasificar la gravedad.
-* **4.4. Resultados y Validación:**
-    * Métricas finales: AUC-PR (0.86), Precisión (84%).
-    * Explicabilidad (XAI): Análisis SHAP para entender los factores de riesgo.
+* **4.1. Ingeniería de Datos (Data Engineering)**
+* **4.2. Modelado Predictivo (The AI Core)**
+* **4.3. Meta-Análisis de Decisiones**
+* **4.4. Resultados y Validación**
+
 
 ## 5. Arquitectura del Sistema y Visualización (MVP)
-* **5.1. Arquitectura de Microservicios:**
-    * Diseño desacoplado: Backend Worker (Simulación IoT) vs. Frontend Dashboard (Visualización).
-    * Persistencia: Base de datos centralizada (SQLite).
-* **5.2. Flujo de Funcionamiento (End-to-End):**
-    * Explicación del ciclo de vida del dato: Sensor -> Inferencia IA -> BBDD -> Alerta.
-* **5.3. Interfaces de Usuario:**
-    * **Dashboard de Empresa:** Panel de control en tiempo real para gestores.
-    * **Simulador Móvil:** Experiencia del cliente digital (Notificación Push + Encuesta).
-    * **Generador de Reportes:** Automatización de Informes Técnicos y Cartas Postales (PDF).
+* **5.1. Arquitectura de Microservicios**
+* **5.2. Flujo de Funcionamiento (End-to-End)**
+* **5.3. Interfaces de Usuario**
 
 ## 6. Innovación e Impacto (Justificación)
-* **6.1. Impacto Social (Brecha Digital):** Detalle de la solución de Cartas Postales Automatizadas para clientes "incontactables".
-* **6.2. Eficiencia Operativa:** Estimación de ahorro de costes por filtrado de falsas alarmas.
-* **6.3. Cambio de Paradigma:** Transición de un modelo reactivo a uno predictivo basado en tendencias de crecimiento.
+* **6.1. Impacto Social (Brecha Digital)** 
+* **6.2. Eficiencia Operativa**
+* **6.3. Cambio de Paradigma:** 
 
 ## 7. Gestión del Proyecto (Project Management)
-* **7.1. Metodología:** Aplicación híbrida PM²/Agile (Iteraciones).
-* **7.2. Retos y Soluciones:** Cómo se superó el bloqueo de memoria RAM (MemoryError) mediante reingeniería de datos.
-* **7.3. Asunciones y Restricciones:** Limitaciones de hardware y disponibilidad de datos históricos.
-
+* **7.1. Metodología**
+* **7.2. Retos y Soluciones**
+* **7.3. Asunciones y Restricciones**
+  
 ## 8. Conclusiones y Próximos Pasos
-* **8.1. Conclusiones:** Validación de la viabilidad técnica y comercial del MVP.
-* **8.2. Roadmap Futuro (Next Steps):**
-    * Implementación de Ciberseguridad (Hashing y Firma Digital en reportes).
-    * Despliegue en Cloud (AWS/Azure).
-    * Integración con sistemas de facturación reales.
+* **8.1. Conclusiones** 
+* **8.2. Roadmap Futuro (Next Steps)**
 
 ## 9. Anexos
-* **9.1. Stack Tecnológico:** Lista de librerías y herramientas.
-* **9.2. Enlace al Repositorio:** Código fuente.
-* **9.3. Guía Rápida de Uso:** Instrucciones para ejecutar la simulación.
+* **9.1. Stack Tecnológico** 
+* **9.2. Enlace al Repositorio** 
+* **9.3. Guía Rápida de Uso** 
 
 
 ## 1. Resumen Ejecutivo (Executive Summary)
