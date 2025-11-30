@@ -466,4 +466,40 @@ Módulo encargado de producir documentación oficial utilizada por el equipo de 
 
 
 ---
+## 6. Innovación e Impacto (Justificación)
 
+GeSAI no es solo una herramienta técnica de predicción; es una solución diseñada para abordar las fricciones estructurales del sector del agua.  
+Nuestra propuesta de valor se articula en tres ejes fundamentales que justifican su implementación.
+
+---
+
+### 6.1 Impacto Social: Cerrando la Brecha Digital
+
+En un contexto de digitalización acelerada, existe el riesgo de dejar atrás a usuarios que no disponen de acceso a plataformas digitales.  
+GeSAI resuelve este problema mediante un sistema híbrido de notificación.
+
+- **Inclusión Tecnológica Automática:** GeSAI implementa una lógica de contingencia (*Fail-safe*). En el caso específico de que no existan credenciales digitales o datos de contacto validados en la base de datos (email o teléfono), el sistema detecta esta carencia y genera automáticamente una **Carta Postal física**, garantizando que la notificación de la incidencia llegue al titular del suministro por vía analógica.
+- **Equidad en el Servicio:** Garantizamos que el tiempo de detección sea idéntico para un usuario digital que para uno analógico, democratizando el acceso a la eficiencia hídrica y protegiendo la economía doméstica de todos los usuarios.
+
+---
+
+### 6.2 Eficiencia Operativa: Reducción de Costes y Falsos Positivos
+
+Uno de los mayores retos operativos de las operadoras de agua son las *falsas alarmas* que movilizan recursos innecesariamente.  
+GeSAI ataca este problema mediante su **Meta-Análisis de Decisiones**.
+
+- **Filtrado Inteligente de Ruido:** Gracias a la evaluación de los *Deltas* (tendencias de crecimiento de probabilidad) y no solo de umbrales estáticos, el sistema distingue con mayor precisión entre un consumo alto puntual y una fuga real.
+- **Minimización de Falsas Alarmas:** La clasificación diferenciada de alertas permite descartar avisos leves que antes hubieran requerido una verificación manual, liberando horas-hombre del equipo técnico para centrarse en incidencias confirmadas.
+- **Priorización de Recursos:** El Dashboard permite a los gestores enfocarse en las incidencias marcadas como *Graves* y *Moderadas*, optimizando las rutas de inspección y reduciendo la huella de carbono operativa.
+
+---
+
+### 6.3 Cambio de Paradigma: De la Reacción a la Predicción Dinámica
+
+GeSAI transforma el modelo tradicional de gestión de incidencias.
+
+- **Modelo Predictivo vs. Reactivo:** Pasamos de actuar cuando el cliente reclama (reactivo) o cuando se supera un límite fijo (estático), a actuar cuando el algoritmo detecta un patrón de comportamiento anómalo futuro (predictivo a 7 días).
+- **Doble Verificación (Feedback Loop):** A diferencia de sistemas unidireccionales, GeSAI incorpora al cliente en la ecuación. A través del simulador móvil, el cliente valida la incidencia, reentrenando indirectamente al sistema y aumentando la confianza en la IA.
+- **Seguridad por Diseño (Security by Design):** En un entorno de IoT, la confianza es clave. Aunque transparente para el usuario, la arquitectura está preparada para el cifrado de reportes y la anonimización de datos sensibles en el procesamiento con Dask.
+
+---
