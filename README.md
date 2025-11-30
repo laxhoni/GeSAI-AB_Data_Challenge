@@ -634,3 +634,24 @@ Para ejecutar la simulación completa del MVP, sigue los siguientes pasos:
 4.  **Interacción:** El *Dashboard* se abrirá automáticamente en tu navegador. Podrás ver cómo las incidencias aparecen a medida que el *worker* las detecta, permitiendo la interacción (descarga de informes, etc.).
 
 ---
+
+## 9.4 Trazabilidad WBS - Entregables Técnicos
+
+A continuación, se establece la relación directa entre la planificación teórica del proyecto (definida en el **Work Breakdown Structure - WBS**) y los archivos técnicos ejecutables desarrollados en este repositorio.  
+Esta matriz garantiza que cada **Paquete de Trabajo (WP)** tiene su correspondencia en código o datos.
+
+| Paquete de Trabajo (WBS)       | Tarea Principal                  | Archivo / Notebook Asociado                        | Descripción Técnica                                                                 |
+|--------------------------------|----------------------------------|---------------------------------------------------|-------------------------------------------------------------------------------------|
+| **WP2: Data Acquisition & Prep** | Ingesta y Limpieza de Datos       | `project-notebooks/data-preparation.ipynb`         | Script que realiza la carga masiva con Dask, limpieza de nulos y merges con Open Data (AEMET, Catastro). |
+| **WP2: Data Acquisition & Prep** | Gestión de Fuentes de Datos       | `data/open-data/` y `data/processed-data/`         | Carpetas que contienen los inputs brutos (CSV/JSON) y el dataset maestro limpio (`dataset_FINAL_COMPLETO`). |
+| **WP3: Model Development**      | Entrenamiento de IA               | `project-notebooks/model-training.ipynb`           | Notebook donde se entrena el modelo LightGBM, se ajustan hiperparámetros y se exportan los modelos `.joblib`. |
+| **WP3: Model Development**      | Validación y Explicabilidad       | `project-notebooks/prediction-XAI.ipynb`           | Análisis de importancia de variables (SHAP values) para validar qué factores disparan las alertas. |
+| **WP4: System Architecture**    | Lógica de Negocio (Backend)       | `src/motor_gesai.py`                               | El "cerebro" del sistema. Integra los modelos entrenados y ejecuta la lógica de detección en tiempo real. |
+| **WP4: System Architecture**    | Definición de Reglas (Meta-Análisis) | `project-notebooks/prediction-meta-analysis.ipynb` | Notebook donde se definieron matemáticamente los umbrales de riesgo y los "Deltas" que luego implementa el motor. |
+| **WP4: System Architecture**    | Base de Datos                     | `src/setup_database.py`                            | Script que inicializa la estructura relacional SQLite (`gesai.db`) y genera los datos sintéticos de clientes. |
+| **WP5: Deployment & UI**        | Interfaz de Usuario (Dashboard)   | `src/app.py`                                       | Código fuente de la aplicación web construida con Dash/Plotly para la visualización de datos. |
+| **WP5: Deployment & UI**        | Generador de Reportes             | `src/reports_manager.py`                           | Módulo encargado de la maquetación automática de los PDFs (Informes Técnicos y Cartas Postales). |
+| **WP5: Deployment & UI**        | Simulación de Entorno             | `src/simulacion_backend.py`                        | Worker que emula la recepción de datos IoT en tiempo real para validar el flujo completo. |
+
+---
+
