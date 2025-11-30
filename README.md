@@ -614,7 +614,7 @@ Para ejecutar la simulación completa del MVP, sigue los siguientes pasos:
 
 1.  **Clonar el Repositorio:**
     ```bash
-    git clone [ENLACE_DEL_REPOSITORIO]
+    git clone https://github.com/laxhoni/GeSAI-AB_Data_Challenge
     cd GeSAI
     ```
 2.  **Preparar el Entorno (Entrenamiento *Offline*):**
