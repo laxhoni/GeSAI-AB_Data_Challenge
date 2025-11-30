@@ -459,7 +459,7 @@ Módulo encargado de producir documentación oficial utilizada por el equipo de 
 - Generada manualmente desde el Dashboard.
 - Exportada como `Carta_<polissa>.pdf`.
 📸 *Ejemplo de Carta Postal:*  
-![Generador de Cartas](docs/Example Postal.png)
+![Generador de Cartas](docs/Example_Postal.png)
 
 
 
