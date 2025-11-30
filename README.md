@@ -439,8 +439,11 @@ Permite validar el flujo completo desde el punto de vista del cliente.
 - Formulario de 6 preguntas para ayudar al diagnóstico técnico.
 - Pantalla de confirmación tras enviar las respuestas.
 
-📸 *Ejemplo de Simulador Móvil:*  
-![Simulador Móvil](docs/simulador.png)
+📸 *Ejemplo de Simulador Móvil:*
+
+| Pantalla Notificación | Pantalla Encuesta |
+| :---: | :---: |
+| ![Simulador 1](docs/Simulacion1.png) | ![Simulador 2](docs/Simulacion2.png) |
 
 ---
 
