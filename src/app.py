@@ -178,7 +178,7 @@ def _build_survey_layout(token):
         "3. ¿El contador se mueve con todo cerrado?",
         "4. ¿Ha detectado humedades recientes?",
         "5. ¿Ha habido obras recientes?",
-        "6. ¿Ha realizado usted, o en su hogar, alguna actividad que justifique un alto consumo en las últimas 48 horas?"
+        "6. ¿Ha realizado usted, o en su hogar, alguna actividad que justifique un alto consumo en las últimas 48 horas?",
         "7. ¿El proceso de notificación de Aigües de Barcelona ha sido claro y satisfactorio?"
     ]
     opciones = [
