@@ -162,7 +162,7 @@ def build_simulador_movil_layout(cliente_id, pathname):
 
     return html.Div(className='mobile-frame', children=[
         dcc.Store(id='store-cliente-id', data=cliente_id),
-        #dcc.Interval(id='intervalo-notificaciones-movil', interval=3000, n_intervals=0),
+        dcc.Interval(id='intervalo-notificaciones-movil', interval=3000, n_intervals=0),
         html.Div(className='mobile-screen', children=[
             html.Div(className='mobile-notch'),
             html.Div(className='mobile-header', children=[html.H5(titulo, className='mobile-header-title')]),
