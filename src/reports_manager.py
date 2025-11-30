@@ -12,6 +12,9 @@ import matplotlib.dates as mdates
 import seaborn as sns
 import time
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUTA_CARTAS = os.path.join(BASE_DIR, "generated_reports", "regular_mails")
+os.makedirs(RUTA_CARTAS, exist_ok=True)
 
 # --- PALETA DE COLORES CORPORATIVA (Elegante) ---
 COLOR_PRIMARIO = (0, 89, 157)       # Azul Aigües Profundo
@@ -268,43 +271,53 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     print(f"✅ Informe Profesional generado: {filename}")
     return filename
 
-
 # ==============================================================================
-# 2. CARTA POSTAL (ESTILO CORRESPONDENCIA OFICIAL)
-# ==============================================================================
+# 2. CARTA POSTAL CLIENTE (ESTILO FORMAL)
 def generar_carta_postal_pdf(incidencia_id, cliente):
+    import os
+    import time
+
+    # --- 1. Preparació de rutes ---
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    OUTPUT_DIR = os.path.join(BASE_DIR, "generated_reports", "regular_mails")
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    cliente_id = cliente.get("cliente_id", "Unknown")
+    filename = f"Carta_Incidencia_{cliente_id}_{incidencia_id}.pdf"
+    filepath = os.path.join(OUTPUT_DIR, filename)
+
+    # --- 2. Crear PDF amb la classe ORIGINAL (amb logo i header) ---
     pdf = PDF_GesAI()
-    pdf.add_page()
+    pdf.add_page()   # <-- aquí automàticament es pinta header + logo
     fecha = time.strftime("%d/%m/%Y")
-    
-    # --- Bloque Dirección (Ventana Derecha) ---
-    # Posición estándar para sobres con ventana derecha
-    pdf.set_y(50) 
-    pdf.set_x(110) 
-    
-    pdf.set_font('Helvetica', 'B', 9)
+
+    # -------------------------------
+    #   BLOQUE DIRECCIÓ (FINESTRA)
+    # -------------------------------
+    pdf.set_xy(110, 50)
+    pdf.set_font("Helvetica", "B", 9)
     pdf.set_text_color(0, 0, 0)
-    
-    # Datos del destinatario limpios
-    nombre = cliente.get('nombre', 'Estimado Cliente')
-    direccion = cliente.get('direccion', 'Adreça Desconeguda')
-    
-    pdf.multi_cell(85, 5, f"{nombre}\n{direccion}\n", 0, 'L')
-    
-    pdf.ln(30) # Espacio tras la dirección
-    
-    # --- Contenido de la Carta ---
-    
-    # Asunto destacado
-    pdf.set_font('Helvetica', 'B', 12)
+
+    nombre = cliente.get("nombre", "Estimado Cliente")
+    direccion = cliente.get("direccion", "Adreça Desconeguda")
+
+    pdf.multi_cell(85, 5, f"{nombre}\n{direccion}\n", align="L")
+    pdf.ln(30)
+
+    # -------------------------------
+    #     ASSUMPTE (ROJO ALERTA)
+    # -------------------------------
+    pdf.set_font("Helvetica", "B", 12)
     pdf.set_text_color(*COLOR_ALERTA)
-    pdf.cell(0, 8, f"AVÍS IMPORTANT: ANOMALIA DE CONSUM (REF. #{incidencia_id})", 0, 1, 'L')
+    pdf.cell(0, 8, f"AVÍS IMPORTANT: ANOMALIA DE CONSUM (REF. #{incidencia_id})", ln=1)
     pdf.ln(5)
-    
-    # Texto cuerpo (Justificado y profesional)
+
+    # -------------------------------
+    #      COS DE LA CARTA
+    # -------------------------------
+    pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(40, 40, 40)
-    pdf.set_font('Helvetica', '', 10)
-    
+
     cuerpo = (
         f"Benvolgut/da client/a,\n\n"
         f"Ens posem en contacte amb vostè per informar-lo que els nostres sistemes de monitoratge intel·ligent (GeSAI) "
@@ -316,58 +329,65 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     )
     pdf.multi_cell(0, 5, cuerpo)
     pdf.ln(10)
-    
-    # --- Call to Action (Recuadro Limpio) ---
+
+    # -------------------------------
+    #   CALL TO ACTION (RECUADRO)
+    # -------------------------------
     pdf.set_draw_color(*COLOR_PRIMARIO)
-    pdf.set_line_width(0.3)
-    # Fondo muy sutil
     pdf.set_fill_color(250, 252, 255)
-    
+    pdf.set_line_width(0.3)
+
     y_start = pdf.get_y()
-    pdf.rect(15, y_start, 180, 20, 'DF')
-    
+    pdf.rect(15, y_start, 180, 20, style="DF")
+
     pdf.set_xy(20, y_start + 5)
-    pdf.set_font('Helvetica', 'B', 9)
+    pdf.set_font("Helvetica", "B", 9)
     pdf.set_text_color(*COLOR_PRIMARIO)
-    pdf.cell(0, 5, "ACTUALITZI LES SEVES DADES PER REBRE AVISOS AL MÒBIL:", 0, 1)
-    
+    pdf.cell(0, 5, "ACTUALITZI LES SEVES DADES PER REBRE AVISOS AL MÒBIL:", ln=1)
+
     pdf.set_x(20)
-    pdf.set_font('Helvetica', '', 9)
+    pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(0, 0, 0)
     pdf.write(5, "Accedeixi a l'Àrea de Clients: ")
-    pdf.set_font('Helvetica', 'U', 9)
+
+    pdf.set_font("Helvetica", "U", 9)
     pdf.set_text_color(0, 0, 255)
-    pdf.write(5, "https://www.aiguesdebarcelona.cat/es/area-clientes", "https://www.aiguesdebarcelona.cat/es/area-clientes")
-    
+    pdf.write(
+        5,
+        "https://www.aiguesdebarcelona.cat/es/area-clientes",
+        "https://www.aiguesdebarcelona.cat/es/area-clientes",
+    )
     pdf.ln(20)
-    
-    # --- Pie de Contacto (Limpio) ---
+
+    # -------------------------------
+    #            FOOTER
+    # -------------------------------
     pdf.set_draw_color(200, 200, 200)
     pdf.line(20, pdf.get_y(), 190, pdf.get_y())
     pdf.ln(5)
-    
-    pdf.set_text_color(80, 80, 80)
-    pdf.set_font('Helvetica', 'B', 8)
-    pdf.cell(0, 5, "CANALS D'ATENCIÓ AL CLIENT", 0, 1)
-    
-    pdf.set_font('Helvetica', '', 8)
-    # Fila 1
-    pdf.cell(30, 5, "Avaries (24h):", 0, 0)
-    pdf.cell(60, 5, "900 700 720  /  935 218 218", 0, 0)
-    pdf.cell(40, 5, "Des de l'estranger:", 0, 0)
-    pdf.cell(0, 5, "+34 935 219 777", 0, 1)
-    # Fila 2
-    pdf.cell(30, 5, "Atenció Client:", 0, 0)
-    pdf.cell(60, 5, "900 710 710  /  935 219 777", 0, 0)
-    pdf.cell(40, 5, "Web:", 0, 0)
-    pdf.set_text_color(0, 0, 255)
-    pdf.cell(0, 5, "www.aiguesdebarcelona.cat", 0, 1, link="https://www.aiguesdebarcelona.cat")
 
-    # Guardar
-    output_dir = '../generated_reports/regular_mails/'
-    os.makedirs(output_dir, exist_ok=True)
-    cliente_id = cliente.get('cliente_id', 'Unknown')
-    filename = os.path.join(output_dir, f"Carta_Incidencia_{cliente_id}_{incidencia_id}.pdf")
-    pdf.output(filename)
-    print(f"✅ Carta Profesional generada: {filename}")
-    return filename
+    pdf.set_text_color(80, 80, 80)
+    pdf.set_font("Helvetica", "B", 8)
+    pdf.cell(0, 5, "CANALS D'ATENCIÓ AL CLIENT", ln=1)
+
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(0, 0, 0)
+
+    pdf.cell(30, 5, "Avaries (24h):")
+    pdf.cell(60, 5, "900 700 720  /  935 218 218")
+    pdf.cell(40, 5, "Des de l'estranger:")
+    pdf.cell(0, 5, "+34 935 219 777", ln=1)
+
+    pdf.cell(30, 5, "Atenció Client:")
+    pdf.cell(60, 5, "900 710 710  /  935 219 777")
+    pdf.cell(40, 5, "Web:")
+    pdf.set_text_color(0, 0, 255)
+    pdf.cell(0, 5, "www.aiguesdebarcelona.cat", ln=1, link="https://www.aiguesdebarcelona.cat")
+
+    # -------------------------------
+    #          GUARDAR
+    # -------------------------------
+    pdf.output(filepath)
+    print(f"📬 Carta generada: {filepath}")
+
+    return filepath

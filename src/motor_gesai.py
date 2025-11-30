@@ -147,12 +147,10 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
         # Acciones
         tiene_email = (datos_cli['email'] is not None)
         msg_extra = ""
-        
         if "Leve" not in estado:
             if not tiene_email:
-                generar_carta_postal_pdf(new_id, datos_cli)
-                cur.execute("UPDATE incidencias SET verificacion = 'CARTA ENVIADA' WHERE id = ?", (new_id,))
-                msg_extra = "Carta Generada"
+                cur.execute("UPDATE incidencias SET verificacion = 'CARTA PENDIENTE' WHERE id = ?", (new_id,))
+                msg_extra = "Carta Pendiente"
             else:
                 token = f"tk_{new_id}_{int(time.time())}"
                 link = f"http://127.0.0.1:8050/verificar/{token}"
@@ -162,9 +160,11 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
                 msg_extra = "Push Enviado"
 
         # Generar informe técnico siempre
-        historico = _obtener_historico_simulado(cliente_id)
-        datos_inc_pdf = {'estado': estado, 'descripcion': desc, 'prob_hoy': p_hoy}
-        generar_informe_tecnico_pdf(new_id, datos_cli, datos_inc_pdf, historico)
+        # historico = _obtener_historico_simulado(cliente_id)
+        # datos_inc_pdf = {'estado': estado, 'descripcion': desc, 'prob_hoy': p_hoy}
+        # generar_informe_tecnico_pdf(new_id, datos_cli, datos_inc_pdf, historico)
+
+        #####
 
         conn.commit()
         return {'status': 'ALERTA', 'message': f"{estado} - {msg_extra}"}

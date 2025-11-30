@@ -4,6 +4,7 @@ from dash import html, dcc, callback, Input, Output, State, ALL, ctx, no_update
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
+from flask import send_file
 import os
 
 # --- IMPORTS DE BACKEND ---
@@ -15,7 +16,7 @@ from motor_gesai import (
     marcar_notificacion_leida,
     validar_token_y_registrar
 )
-from reports_manager import generar_informe_tecnico_pdf
+from reports_manager import generar_informe_tecnico_pdf, generar_carta_postal_pdf
 
 # --- CONFIGURACIÓN DE RUTAS ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -448,6 +449,8 @@ def update_filter(n):
      Input({'type': 'btn-download-report', 'index': ALL}, 'n_clicks')],
     prevent_initial_call=True
 )
+
+
 def handle_details(n_card, n_close, n_down):
     tid = ctx.triggered_id
     if not tid:
@@ -457,21 +460,11 @@ def handle_details(n_card, n_close, n_down):
     if isinstance(tid, dict) and tid.get('type') == 'btn-close-details':
         return None
 
-    # DESCARGAR
-    if isinstance(tid, dict) and tid.get('type') == 'btn-download-report':
-        data = get_detalles_incidencia(tid.get('index'))
-        if data.get('success'):
-            try:
-                hist = pd.DataFrame({
-                    'FECHA_HORA': pd.date_range(start='2024-01-01', periods=24, freq='h'),
-                    'CONSUMO_REAL': [10]*20 + [80, 90, 100, 110]
-                })
-                generar_informe_tecnico_pdf(tid.get('index'), data['datos_cliente'], data['datos_incidencia'], hist)
-            except Exception:
-                pass
-        return no_update
+    # ⚠️ IMPORTANTE:
+    # Eliminamos completamente la lógica antigua que generaba informes desde el callback.
+    # Ya no existe "btn-download-report". Todo ahora es descarga por ruta Flask.
 
-    # ABRIR
+    # ABRIR DETALLES
     if isinstance(tid, dict) and tid.get('type') == 'incidencia-card':
         if not any(n_card):
             return no_update
@@ -481,15 +474,64 @@ def handle_details(n_card, n_close, n_down):
             return no_update
 
         inc, cli = data['datos_incidencia'], data['datos_cliente']
-        return html.Div(className='details-panel animated-slide-up', children=[
-            html.Button('✕', id={'type': 'btn-close-details', 'index': inc['id']}, className='btn-close'),
-            html.H3(f"Incidencia #{inc['id']}", className='details-title'),
-            dbc.Row([
-                dbc.Col([html.H5("Detalles"), html.P(f"Estado: {inc.get('estado','')}"), html.P(f"Probabilidad: {inc.get('prob_hoy', 'N/A')}")], md=6),
-                dbc.Col([html.H5("Cliente"), html.P(cli.get('nombre','-')), html.P(cli.get('direccion','-'))], md=6),
-            ]),
-            html.Button('Descargar Informe Técnico', id={'type': 'btn-download-report', 'index': inc['id']}, className='btn-block')
-        ])
+
+        # --- BOTONES DINÁMICOS ---
+        botones = []
+
+        tiene_contacto = cli.get("email") or cli.get("telefono")
+
+        if tiene_contacto:
+            botones.append(
+                html.A(
+                    "Descargar Informe Técnico",
+                    href=f"/download/informe/{inc['id']}",
+                    target="_blank",
+                    rel="noopener noreferrer",
+                    className="btn-block",
+                    style={"textDecoration": "none", "marginTop": "12px"}
+                )
+        )
+
+        else:
+        # Cliente SIN contacto → sólo carta postal
+            botones.append(
+                html.A(
+                    "Generar Carta Postal",
+                    href=f"/download/carta/{inc['id']}",
+                    target="_blank",
+                    rel="noopener noreferrer",
+                    className="btn-block",
+                    style={"textDecoration": "none", "marginTop": "12px"}
+                )
+        )
+
+        # --- RETURN PANEL DETALLES ---
+        return html.Div(
+            className='details-panel animated-slide-up',
+            children=[
+                html.Button(
+                    '✕',
+                    id={'type': 'btn-close-details', 'index': inc['id']},
+                    className='btn-close'
+                ),
+                html.H3(f"Incidencia #{inc['id']}", className='details-title'),
+                dbc.Row([
+                    dbc.Col([
+                        html.H5("Detalles"),
+                        html.P(f"Estado: {inc.get('estado','')}"),
+                        html.P(f"Probabilidad: {inc.get('prob_hoy', 'N/A')}")
+                    ], md=6),
+                    dbc.Col([
+                        html.H5("Cliente"),
+                        html.P(cli.get('nombre','-')),
+                        html.P(cli.get('direccion','-'))
+                    ], md=6),
+                ]),
+                *botones  # ← aquí añadimos todos los botones dinámicos
+            ]
+        )
+
+    return no_update
 
 
 @callback(
@@ -564,6 +606,40 @@ app.clientside_callback(
     Output('dummy-download-output', 'children'),
     Input('dark-mode-toggle', 'n_clicks')
 )
+
+# -------- SERVIR PDF DE INFORME TÉCNICO --------
+@app.server.route('/download/informe/<int:id>')
+def download_informe(id):
+    # Obtenim dades incidència
+    data = get_detalles_incidencia(id)
+    if not data.get("success"):
+        return "No existe", 404
+
+    inc = data["datos_incidencia"]
+    cli = data["datos_cliente"]
+
+    # Crear histórico dummy (como hacías en el callback)
+    hist = pd.DataFrame({
+        "FECHA_HORA": pd.date_range(start="2024-01-01", periods=24, freq="h"),
+        "CONSUMO_REAL": [10]*20 + [80,90,100,110]
+    })
+
+    # Generar PDF
+    filename = generar_informe_tecnico_pdf(id, cli, inc, hist)
+
+    # Enviar fichero al navegador
+    return send_file(filename, as_attachment=False)
+
+@app.server.route('/download/carta/<int:id>')
+def download_carta(id):
+    data = get_detalles_incidencia(id)
+    if not data.get("success"):
+        return "No existe", 404
+
+    cli = data["datos_cliente"]
+    filename = generar_carta_postal_pdf(id, cli)
+    return send_file(filename, as_attachment=False)
+
 
 
 # ------------------------------------------------------------
