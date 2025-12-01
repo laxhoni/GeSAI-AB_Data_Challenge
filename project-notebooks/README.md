@@ -19,7 +19,7 @@ Este *notebook* aborda el desafío de procesar el dataset masivo proporcionado p
 * **Limpieza:** Imputación de valores nulos, corrección de tipos de datos y eliminación estricta de duplicados.
 * **Salida:** Generación del archivo maestro `dataset_FINAL_COMPLETO.parquet`.
 
-### [03_model_training.ipynb](2_model_training.ipynb)
+### [02_model_training.ipynb](2_model_training.ipynb)
 **Entrenamiento, Optimización y Exportación de Modelos**
 
 Núcleo del modelado predictivo. Se justifica el cambio de arquitectura de LSTM (Redes Recurrentes) a **LightGBM** (Gradient Boosting) por eficiencia y rendimiento en datos tabulares.
@@ -35,7 +35,7 @@ Núcleo del modelado predictivo. Se justifica el cambio de arquitectura de LSTM 
 * **Optimización (Threshold Tuning):** Análisis de sensibilidad para ajustar el umbral de decisión (fijado finalmente en **0.30**) para maximizar el *F1-Score* y el *Recall*.
 * **Salida:** Exportación de modelos `.joblib` y el dataset de simulación `datos_simulacion_features.csv`.
 
-### [04_meta_analysis.ipynb](3_meta_analysis.ipynb)
+### [03_meta_analysis.ipynb](3_meta_analysis.ipynb)
 **Meta-Análisis y Lógica de Negocio**
 
 Este *notebook* no entrena modelos, sino que define las reglas de negocio que interpretan las predicciones de la Inteligencia Artificial. Transforma una probabilidad matemática en una decisión operativa.
@@ -49,7 +49,7 @@ Este *notebook* no entrena modelos, sino que define las reglas de negocio que in
     * 🟢 **Fuga Leve / No Fuga:** Riesgo bajo o decreciente.
 * **Validación:** Visualización de la distribución de alertas para confirmar la reducción de falsos positivos.
 
-### [05_xai_explainability.ipynb](4_xai_explainability.ipynb)
+### [04_xai_explainability.ipynb](4_xai_explainability.ipynb)
 **Explicabilidad del Modelo (XAI)**
 
 Enfoque de "Caja Blanca" para garantizar la transparencia y confianza en el algoritmo.
