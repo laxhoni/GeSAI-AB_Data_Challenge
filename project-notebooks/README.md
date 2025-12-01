@@ -1,1 +1,71 @@
+# Laboratorio de Data Science: Proyecto GeSAI
 
+Este directorio contiene el flujo de trabajo secuencial ("Pipeline") de Ciencia de Datos desarrollado para el proyecto GeSAI. Los *notebooks* están numerados para asegurar la reproducibilidad de los experimentos, desde la ingesta de datos crudos hasta la validación de negocio y explicabilidad del modelo.
+
+---
+
+## Índice de Notebooks
+
+### [01_data_preparation.ipynb](1_data_preparation.ipynb)
+**Ingeniería de Datos y ETL Distribuido**
+
+Este *notebook* aborda el desafío de procesar el dataset masivo proporcionado por Aigües de Barcelona ($>75$ millones de registros) superando las limitaciones de memoria RAM local.
+
+* **Tecnología:** Utilización de **Dask** para procesamiento paralelo y *lazy evaluation*.
+* **Fusión de Datos (Data Enrichment):** Integración del dataset de consumo con fuentes de *Open Data*:
+    * **Meteorología (AEMET):** Temperatura y precipitación histórica.
+    * **Catastro:** Antigüedad de los edificios.
+    * **Socioeconómico:** Renta familiar disponible.
+* **Limpieza:** Imputación de valores nulos, corrección de tipos de datos y eliminación estricta de duplicados.
+* **Salida:** Generación del archivo maestro `dataset_FINAL_COMPLETO.parquet`.
+
+### [03_model_training.ipynb](2_model_training.ipynb)
+**Entrenamiento, Optimización y Exportación de Modelos**
+
+Núcleo del modelado predictivo. Se justifica el cambio de arquitectura de LSTM (Redes Recurrentes) a **LightGBM** (Gradient Boosting) por eficiencia y rendimiento en datos tabulares.
+
+* **Feature Engineering Avanzado:** Creación de variables sintéticas para capturar la temporalidad sin usar redes recurrentes:
+    * *Lags* (Retardos): Consumo hace 1h, 24h, 7 días.
+    * *Rolling Windows*: Medias móviles y desviación estándar semanal.
+    * *Ratios*: Desviación del consumo actual respecto a la media histórica.
+* **Estrategia Multi-Horizonte:** Entrenamiento de tres modelos independientes para predecir la probabilidad de fuga en:
+    1.  **Target HOY:** Riesgo inmediato.
+    2.  **Target MAÑANA:** Proyección a 24 horas.
+    3.  **Target 7 DÍAS:** Proyección estructural a una semana.
+* **Optimización (Threshold Tuning):** Análisis de sensibilidad para ajustar el umbral de decisión (fijado finalmente en **0.30**) para maximizar el *F1-Score* y el *Recall*.
+* **Salida:** Exportación de modelos `.joblib` y el dataset de simulación `datos_simulacion_features.csv`.
+
+### [04_meta_analysis.ipynb](3_meta_analysis.ipynb)
+**Meta-Análisis y Lógica de Negocio**
+
+Este *notebook* no entrena modelos, sino que define las reglas de negocio que interpretan las predicciones de la Inteligencia Artificial. Transforma una probabilidad matemática en una decisión operativa.
+
+* **Cálculo de Deltas:** Análisis de la derivada del riesgo (diferencia entre la probabilidad futura y la actual) para identificar tendencias.
+    * `Delta Corto = Prob. Mañana - Prob. Hoy`
+    * `Delta Largo = Prob. 7 Días - Prob. Hoy`
+* **Matriz de Decisión (Semáforo):** Implementación de la lógica jerárquica para clasificar las incidencias:
+    * 🔴 **Fuga Grave:** Probabilidad crítica o crecimiento acelerado.
+    * 🟠 **Fuga Moderada:** Alta probabilidad pero estable.
+    * 🟢 **Fuga Leve / No Fuga:** Riesgo bajo o decreciente.
+* **Validación:** Visualización de la distribución de alertas para confirmar la reducción de falsos positivos.
+
+### [05_xai_explainability.ipynb](4_xai_explainability.ipynb)
+**Explicabilidad del Modelo (XAI)**
+
+Enfoque de "Caja Blanca" para garantizar la transparencia y confianza en el algoritmo.
+
+* **Metodología:** Uso de **SHAP (SHapley Additive exPlanations)**.
+* **Análisis Global:** Identificación de las variables más influyentes en el modelo (ej. Consumo mínimo nocturno, Antigüedad del contador).
+* **Análisis Local:** Explicación caso por caso. Permite responder a la pregunta: *"¿Por qué el sistema ha marcado esta lectura específica como una fuga grave?"*, desglosando la contribución de cada variable a la puntuación final.
+
+---
+
+## Requisitos de Ejecución
+
+Para ejecutar estos *notebooks* en el orden correcto, asegúrese de instalar las dependencias listadas en `requirements.txt` en la raíz del proyecto.
+
+**Orden de Ejecución Recomendado:**
+1.  `01_data_preparation.ipynb` (Genera los datos limpios).
+2.  `02_model_training.ipynb` (Entrena y guarda los modelos).
+3.  `03_meta_analysis.ipynb` (Valida las reglas de negocio).
+4.  `04_xai_explainability.ipynb` (Genera gráficos de interpretación).
