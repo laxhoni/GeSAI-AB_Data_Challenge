@@ -189,7 +189,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     pdf.set_text_color(*txt_color)
     pdf.cell(0, 6, estado, 0, 1)
     
-    pdf.ln(6)
+    pdf.ln(4)
     
     # Detalles técnicos
     pdf.key_value_row("Probabilitat de Fuga:", f"{datos_incidencia.get('prob_hoy', 0):.2%} (Model Predictiu)")
@@ -274,7 +274,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
         else:
             pdf.cell(45, 5, "0h", 0, 0, 'C')
         
-        pdf.ln(10) # Salir de la caja
+        pdf.ln(7) # Salir de la caja
 
         # C) Generar Gráfica
         chart_path = f"temp_chart_{incidencia_id}.png"
@@ -303,7 +303,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
             # Asumiremos que desde app.py enviamos una lista de dicts: [{'pregunta': '...', 'respuesta': 'SI'}]
             # O un dict simple. Adaptamos la visualización:
             
-            pdf.ln(5) # Espacio antes de la nueva sección
+            pdf.ln(4) # Espacio antes de la nueva sección
             pdf.section_title("4. Doble verificació del client (App Mòbil)")
             
             # Fondo gris suave para las respuestas
