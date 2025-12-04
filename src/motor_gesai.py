@@ -14,6 +14,9 @@ import json
 # --- 1. CONFIGURACIÓN ---
 DB_NAME = 'gesai.db'
 MODELOS_DIR = '../data/processed-data/'
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(CURRENT_DIR)
+DB_PATH = os.path.join(BASE_DIR, 'gesai.db')
 
 # Umbrales de Negocio
 UMBRAL_SEGURIDAD = 0.30
@@ -22,11 +25,47 @@ UMBRAL_CRITICO = 0.85
 TENDENCIA_RAPIDA = 0.05
 TENDENCIA_ESTRUCTURAL = 0.15
 
-# Eliminamos Criptografía
 faker = Faker('es_ES')
 
 modelos_ia = {}
 features_modelo = []
+
+
+
+def _conectar_bbdd():
+    try:
+        # Usamos la ruta absoluta DB_PATH
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn.execute("PRAGMA foreign_keys = 1")
+        conn.row_factory = sqlite3.Row 
+        return conn
+    except Exception as e:
+        print(f"❌ Error conectando a BBDD: {e}")
+        return None
+
+def get_lista_incidencias_activas(filtro="todas"):
+    conn = _conectar_bbdd()
+    # PROTECCIÓN 1: Si no hay conexión, devolver lista vacía sin romper nada
+    if not conn: 
+        return []
+    
+    try:
+        sql = "SELECT i.*, c.nombre as cliente_nombre FROM incidencias i JOIN clientes c ON i.cliente_id = c.cliente_id"
+        if filtro != "todas": sql += f" WHERE i.estado LIKE '%{filtro}%'"
+        sql += " ORDER BY i.id DESC LIMIT 50"
+        
+        cur = conn.cursor()
+        cur.execute(sql)
+        return [dict(r) for r in cur.fetchall()]
+        
+    except Exception as e:
+        # PROTECCIÓN 2: Si la tabla no existe o hay error SQL, imprimir y no romper
+        print(f"⚠️ Error leyendo incidencias: {e}")
+        return []
+        
+    finally: 
+        conn.close()
+        
 
 # --- 2. INICIALIZACIÓN ---
 def inicializar_motor():
@@ -44,15 +83,6 @@ def inicializar_motor():
 
 inicializar_motor()
 
-def _conectar_bbdd():
-    path = DB_NAME if os.path.exists(DB_NAME) else f"../{DB_NAME}"
-    try:
-        conn = sqlite3.connect(path, check_same_thread=False)
-        conn.execute("PRAGMA foreign_keys = 1")
-        conn.row_factory = sqlite3.Row 
-        return conn
-    except: return None
-
 def _aplicar_reglas(p_hoy, p_manana, p_7dias):
     delta_corto = p_manana - p_hoy
     delta_largo = p_7dias - p_hoy
@@ -66,11 +96,60 @@ def _aplicar_reglas(p_hoy, p_manana, p_7dias):
         return "Fuga Moderada", "Estable"
     return "Fuga Grave", "Crítica"
 
-def _obtener_historico_simulado(cliente_id):
-    """Genera histórico visual para el PDF."""
-    fechas = pd.date_range(end=pd.Timestamp.now(), periods=24*30, freq='h')
-    consumos = np.random.normal(loc=20, scale=5, size=len(fechas))
-    return pd.DataFrame({'FECHA_HORA': fechas, 'CONSUMO_REAL': consumos})
+
+# --- 3. FUNCIÓN DE OBTENCIÓN DE HISTÓRICO REAL ---
+
+def get_consumo_historico(cliente_id, es_fuga=False):
+    """
+    Recupera historial REAL.
+    Usa random.seed para que la inyección de la fuga sea SIEMPRE IGUAL
+    para el mismo cliente.
+    """
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path_datos = os.path.join(base_dir, 'data', 'processed-data', 'datos_simulacion_features.csv')
+    
+    # FIJAR LA SEMILLA CON EL ID DEL CLIENTE
+    # Esto garantiza que si hay que inventar/inyectar algo, siempre sea igual.
+    random.seed(str(cliente_id))
+    
+    try:
+        if os.path.exists(path_datos):
+            df = pd.read_csv(path_datos, usecols=['POLISSA_SUBM', 'FECHA_HORA_CRONO', 'CONSUMO_REAL'], dtype={'POLISSA_SUBM': str})
+            
+            # Filtrado estricto
+            df_real = df[df['POLISSA_SUBM'] == str(cliente_id)].copy()
+            
+            if df_real.empty:
+                print(f"❌ No existe cliente {cliente_id} en CSV")
+                return pd.DataFrame()
+
+            print(f"✅ DATOS REALES ENCONTRADOS: {len(df_real)} registros")
+
+            # Fechas
+            df_real['FECHA_HORA'] = pd.to_datetime(df_real['FECHA_HORA_CRONO'], errors='coerce')
+            df_real = df_real.sort_values('FECHA_HORA')
+            
+            # Últimos 30 días
+            df_final = df_real.tail(720)[['FECHA_HORA', 'CONSUMO_REAL']].copy()
+            
+            if not df_final.empty:
+                # Desplazar a HOY
+                ultimo = df_final['FECHA_HORA'].max()
+                df_final['FECHA_HORA'] += (pd.Timestamp.now() - ultimo)
+                
+                # INYECCIÓN DETERMINISTA (Gracias al seed del principio)
+                if es_fuga:
+                    puntos = len(df_final)
+                    duracion = min(random.randint(48, 120), puntos)
+                    extra = np.linspace(10, 200, duracion)
+                    df_final.iloc[-duracion:, 1] += extra
+
+                return df_final
+
+    except Exception as e:
+        print(f"⚠️ Error CSV: {e}")
+
+    return pd.DataFrame()
 
 # --- 4. FUNCIÓN DE DETECCIÓN (Acepta datos ordenados) ---
 def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = None) -> dict:
@@ -185,16 +264,6 @@ def verificar_credenciales(u, p):
     finally: conn.close()
     return {'success': False, 'message': 'Credenciales incorrectas'}
 
-def get_lista_incidencias_activas(filtro="todas"):
-    conn = _conectar_bbdd()
-    try:
-        sql = "SELECT i.*, c.nombre as cliente_nombre FROM incidencias i JOIN clientes c ON i.cliente_id = c.cliente_id"
-        if filtro != "todas": sql += f" WHERE i.estado LIKE '%{filtro}%'"
-        sql += " ORDER BY i.id DESC LIMIT 50"
-        cur = conn.cursor()
-        cur.execute(sql)
-        return [dict(r) for r in cur.fetchall()]
-    finally: conn.close()
 
 def get_detalles_incidencia(id):
     conn = _conectar_bbdd()

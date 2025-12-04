@@ -195,73 +195,101 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     pdf.key_value_row("Probabilitat de Fuga:", f"{datos_incidencia.get('prob_hoy', 0):.2%} (Model Predictiu)")
     pdf.key_value_row("Descripció Tècnica:", datos_incidencia.get('descripcion', '-'))
 
-       # --- 3. Evidencia Consumo (NUEVO DISEÑO TABLA) ---
+# --- 3. ANÁLISIS DE CONSUMO Y PÉRDIDAS (ACTUALIZADO) ---
     if historico_df is not None and not historico_df.empty:
-        pdf.section_title("3. Anàlisi de Consum")
+        pdf.section_title("3. Anàlisi de Facturació i Pèrdues")
         
-        # Calcular datos
+        # A) CÁLCULOS AVANZADOS
         consumo_total = historico_df['CONSUMO_REAL'].sum()
-        promedio = historico_df['CONSUMO_REAL'].mean()
+        
+        # Heurística: Consideramos "Consumo Base" a la mediana.
+        # Todo lo que supere la base x 1.1 (10% margen) es "exceso" atribuible a la fuga/anomalía.
+        base_h = historico_df['CONSUMO_REAL'].median()
+        df_exceso = historico_df[historico_df['CONSUMO_REAL'] > (base_h * 1.1)]
+        
+        litros_perdidos = 0
+        coste_estimado = 0
+        horas_fuga = 0
+        
+        # Calculamos pérdidas si el estado es Grave o Moderada
+        estado_norm = datos_incidencia.get('estado','').upper()
+        if not df_exceso.empty and (("GRAVE" in estado_norm) or ("MODERADA" in estado_norm)):
+            litros_perdidos = (df_exceso['CONSUMO_REAL'] - base_h).sum()
+            horas_fuga = len(df_exceso)
+            # Precio aprox agua (Tramo alto + Canon): ~2.85 EUR/m3
+            coste_estimado = (litros_perdidos / 1000) * 2.85
+            
         fecha_ini = historico_df['FECHA_HORA'].min().strftime("%d/%m")
         fecha_fin = historico_df['FECHA_HORA'].max().strftime("%d/%m")
         
-        # Dibujar Grid de Métricas (3 Columnas)
+        # B) DIBUJAR TABLA DE KPIs
         y_start = pdf.get_y()
+        pdf.set_fill_color(245, 245, 245)
+        pdf.rect(15, y_start, 180, 18, 'F') # Fondo gris
         
-        # Fondo Gris
-        pdf.set_fill_color(*COLOR_LINEA)
-        pdf.rect(15, y_start, 180, 15, 'F')
+        pdf.set_y(y_start + 4)
         
-        pdf.set_y(y_start + 3)
-        
-        # Columna 1: Periodo
+        # Columna 1: Total Periodo
         pdf.set_x(15)
-        pdf.set_font('Arial', 'B', 8)
-        pdf.set_text_color(100, 100, 100)
-        pdf.cell(60, 4, "PERÍODE", 0, 2, 'C')
-        pdf.set_font('Arial', 'B', 10)
-        pdf.set_text_color(0, 0, 0)
-        pdf.cell(60, 5, f"{fecha_ini} - {fecha_fin}", 0, 0, 'C')
+        pdf.set_font('Helvetica', 'B', 8); pdf.set_text_color(100, 100, 100)
+        pdf.cell(45, 4, f"CONSUM ({fecha_ini}-{fecha_fin})", 0, 2, 'C')
+        pdf.set_font('Helvetica', 'B', 11); pdf.set_text_color(0, 0, 0)
+        pdf.cell(45, 5, f"{consumo_total/1000:.2f} m3", 0, 0, 'C')
         
-        # Columna 2: Total
-        pdf.set_xy(75, y_start + 3)
-        pdf.set_font('Arial', 'B', 8)
-        pdf.set_text_color(100, 100, 100)
-        pdf.cell(60, 4, "VOLUM TOTAL", 0, 2, 'C')
-        pdf.set_font('Arial', 'B', 10)
-        pdf.set_text_color(*COLOR_PRIMARIO)
-        pdf.cell(60, 5, f"{consumo_total:.2f} L", 0, 0, 'C')
-        
-        # Columna 3: Mitjana
-        pdf.set_xy(135, y_start + 3)
-        pdf.set_font('Arial', 'B', 8)
-        pdf.set_text_color(100, 100, 100)
-        pdf.cell(60, 4, "MITJANA / HORA", 0, 2, 'C')
-        pdf.set_font('Arial', 'B', 10)
-        pdf.set_text_color(0, 0, 0)
-        pdf.cell(60, 5, f"{promedio:.2f} L/h", 0, 0, 'C')
-        
-        pdf.ln(7) # Salir de la caja
-        
-        # Gráfica
-        chart_path = f"temp_chart_{incidencia_id}.png"
+        # Columna 2: Fuga Estimada (Litros)
+        pdf.set_xy(60, y_start + 4)
+        pdf.set_font('Helvetica', 'B', 8); pdf.set_text_color(100, 100, 100)
+        pdf.cell(45, 4, "FUITA ESTIMADA", 0, 2, 'C')
+        pdf.set_font('Helvetica', 'B', 11)
+        if litros_perdidos > 50:
+            pdf.set_text_color(*COLOR_ALERTA)
+            pdf.cell(45, 5, f"{litros_perdidos:.0f} L", 0, 0, 'C')
+        else:
+            pdf.set_text_color(0, 150, 0) # Verde
+            pdf.cell(45, 5, "0 L", 0, 0, 'C')
 
+        # Columna 3: Impacto Económico (EUR)
+        pdf.set_xy(105, y_start + 4)
+        pdf.set_font('Helvetica', 'B', 8); pdf.set_text_color(100, 100, 100)
+        pdf.cell(45, 4, "IMPACTE ECONÒMIC", 0, 2, 'C')
+        pdf.set_font('Helvetica', 'B', 11)
+        if coste_estimado > 0.1:
+            pdf.set_text_color(*COLOR_ALERTA)
+            # USAMOS 'EUR' PARA EVITAR ERROR DE ENCODING
+            pdf.cell(45, 5, f"+{coste_estimado:.2f} EUR", 0, 0, 'C')
+        else:
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(45, 5, "-", 0, 0, 'C')
+            
+        # Columna 4: Duración (Horas)
+        pdf.set_xy(150, y_start + 4)
+        pdf.set_font('Helvetica', 'B', 8); pdf.set_text_color(100, 100, 100)
+        pdf.cell(45, 4, "DURADA DETECTADA", 0, 2, 'C')
+        pdf.set_font('Helvetica', 'B', 11); pdf.set_text_color(0, 0, 0)
+        if horas_fuga > 0:
+            dias = horas_fuga // 24
+            horas_rest = horas_fuga % 24
+            texto_dur = f"{dias}d {horas_rest}h" if dias > 0 else f"{horas_rest}h"
+            pdf.cell(45, 5, texto_dur, 0, 0, 'C')
+        else:
+            pdf.cell(45, 5, "0h", 0, 0, 'C')
+        
+        pdf.ln(10) # Salir de la caja
+
+        # C) Generar Gráfica
+        chart_path = f"temp_chart_{incidencia_id}.png"
         try:
             _generar_grafica_consumo_compacta(historico_df, chart_path)
-            
-            # 1. Insertar la imagen
-            pdf.image(chart_path, x=15, w=180) 
-            
-            # --- NUEVO: AÑADIR REFERENCIA FIG. 1 ---
-            pdf.ln(1) # Pequeño espacio vertical (1mm)
-            pdf.set_font('Arial', 'I', 8) # Fuente Itálica, tamaño 8
-            pdf.set_text_color(100, 100, 100) # Color gris para que parezca un pie de foto
-            # 'C' al final centra el texto respecto a la página
-            pdf.cell(0, 5, "Fig 1. Dades de telelectura del comptador: consum real (m³) vs temps.", 0, 1, 'C') 
-            # ---------------------------------------
+            # Insertar imagen centrada
+            pdf.image(chart_path, x=15, w=180)
+            pdf.ln(1)
+            # Pie de foto
+            pdf.set_font('Helvetica', 'I', 8)
+            pdf.set_text_color(100, 100, 100)
+            pdf.cell(0, 5, "Fig 1. Evolució horària del consum (30 dies). La zona ombrejada indica el consum acumulat.", 0, 1, 'C')
             os.remove(chart_path)
         except Exception as e:
-            pdf.cell(0, 5, f"Error gràfica: {e}", 0, 1)
+            pdf.cell(0, 5, f"Error generant gràfica: {e}", 0, 1)
             
     # --- 4. Doble verificación del cliente ---
     encuesta_raw = datos_incidencia.get('encuesta_resultado')

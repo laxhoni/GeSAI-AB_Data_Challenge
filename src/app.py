@@ -14,7 +14,8 @@ from motor_gesai import (
     get_detalles_incidencia,
     get_notificaciones_pendientes_cliente,
     marcar_notificacion_leida,
-    validar_token_y_registrar
+    validar_token_y_registrar,
+    get_consumo_historico
 )
 from reports_manager import generar_informe_tecnico_pdf, generar_carta_postal_pdf
 
@@ -401,6 +402,8 @@ def display_page(pathname, session_data):
 )
 def refresh_dashboard(n, filtro):
     filtro = (filtro or 'todas').upper()
+        
+    # Esta línea es la clave: el "or []" evita que 'todas' sea None
     todas = get_lista_incidencias_activas('todas') or []
 
     def match(i):
@@ -462,89 +465,64 @@ def update_filter(n):
 @callback(
     Output('modal-detalles', 'children'),
     [Input({'type': 'incidencia-card', 'index': ALL}, 'n_clicks'),
-     Input({'type': 'btn-close-details', 'index': ALL}, 'n_clicks'),
-     Input({'type': 'btn-download-report', 'index': ALL}, 'n_clicks')],
+     Input({'type': 'btn-close-details', 'index': ALL}, 'n_clicks')],
     prevent_initial_call=True
 )
-def handle_details(n_card, n_close, n_down):
+def handle_details(n_card, n_close):
     tid = ctx.triggered_id
-    if not tid:
-        return no_update
+    if not tid: return no_update
 
-    # CERRAR
+    # CASO 1: CERRAR
     if isinstance(tid, dict) and tid.get('type') == 'btn-close-details':
         return None
 
-    # ABRIR DETALLES
+    # CASO 2: ABRIR DETALLES
     if isinstance(tid, dict) and tid.get('type') == 'incidencia-card':
-        if not any(n_card):
-            return no_update
+        if not any(n_card): return no_update
 
         data = get_detalles_incidencia(tid.get('index'))
-        if not data.get('success'):
-            return no_update
+        if not data.get('success'): return no_update
 
         inc, cli = data['datos_incidencia'], data['datos_cliente']
-
-        # --- BOTONES DINÁMICOS (Versión Horizontal) ---
-        botones_lista = []
         tiene_contacto = cli.get("email") or cli.get("telefono")
 
-        # Estilo común para los botones
+        # --- ESTILOS ---
         estilo_btn = {
-            "flex": "1",               
-            "textAlign": "center",
-            "padding": "10px",
-            "borderRadius": "6px",
-            "textDecoration": "none",
-            "color": "white",
-            "fontWeight": "500",
-            "fontSize": "0.9rem",
-            "display": "flex",          
-            "alignItems": "center",
-            "justifyContent": "center"
+            "flex": "1", "textAlign": "center", "padding": "10px",
+            "borderRadius": "6px", "textDecoration": "none", "color": "white",
+            "fontWeight": "500", "fontSize": "0.9rem", "display": "flex",
+            "alignItems": "center", "justifyContent": "center"
         }
 
-        # 1. Botón INFORME (Azul) - Siempre visible
+        # --- BOTONES (Con target="_blank" restaurado) ---
+        
+        # Botón Informe
         btn_informe = html.A(
             "📄 Informe Técnico",
             href=f"/download/informe/{inc['id']}",
-            target="_blank",
-            rel="noopener noreferrer",
-            style={**estilo_btn, "backgroundColor": "#00599D"} 
+            target="_blank",  # <--- ✅ ESTO ABRE LA PESTAÑA NUEVA
+            style={**estilo_btn, "backgroundColor": "#00599D"}
         )
-        botones_lista.append(btn_informe)
 
-        # 2. Botón CARTA (Gris) - Solo si no hay contacto
+        botones = [btn_informe]
+
+        # Botón Carta
         if not tiene_contacto:
             btn_carta = html.A(
                 "📮 Carta Postal",
                 href=f"/download/carta/{inc['id']}",
-                target="_blank",
-                rel="noopener noreferrer",
-                style={**estilo_btn, "backgroundColor": "#6B7280", "marginLeft": "10px"} 
+                target="_blank", # <--- ✅ ESTO ABRE LA PESTAÑA NUEVA
+                style={**estilo_btn, "backgroundColor": "#6B7280", "marginLeft": "10px"}
             )
-            botones_lista.append(btn_carta)
+            botones.append(btn_carta)
 
-        # Contenedor para ponerlos uno al lado del otro
-        contenedor_botones = html.Div(
-            children=botones_lista,
-            style={
-                'display': 'flex', 
-                'marginTop': '20px', 
-                'width': '100%'
-            }
-        )
+        contenedor_botones = html.Div(children=botones, style={'display': 'flex', 'marginTop': '20px', 'width': '100%'})
 
-        # --- RETURN PANEL DETALLES ---
+        # Renderizar
         return html.Div(
             className='details-panel animated-slide-up',
             children=[
-                html.Button(
-                    '✕',
-                    id={'type': 'btn-close-details', 'index': inc['id']},
-                    className='btn-close'
-                ),
+                html.Button('✕', id={'type': 'btn-close-details', 'index': inc['id']}, className='btn-close'),
                 html.H3(f"Incidencia #{inc['id']}", className='details-title'),
                 dbc.Row([
                     dbc.Col([
@@ -558,46 +536,59 @@ def handle_details(n_card, n_close, n_down):
                         html.P(cli.get('direccion','-'))
                     ], md=6),
                 ]),
-                contenedor_botones # <--- Aquí insertamos los botones horizontales
+                contenedor_botones
             ]
         )
 
     return no_update
+
+# src/app.py
 
 @callback(
     Output('div-notificaciones-movil', 'children'),
     Input('intervalo-notificaciones-movil', 'n_intervals'),
     State('store-cliente-id', 'data'),
     State('url', 'pathname')
+    # ❌ HEMOS QUITADO: State('div-notificaciones-movil', 'children')
+    # Ya no necesitamos saber qué había antes, vamos a machacarlo.
 )
 def mobile_poll(n, cid, path):
     if not path or not cid:
         return no_update
-    # Excluir 'verificar', 'confirmacion' Y 'recomendaciones'
+        
+    # Evitar molestar si el usuario está en flujo de verificación
     if 'verificar' in path or 'confirmacion' in path or 'recomendaciones' in path:
         return no_update
     
+    # 1. Buscar nuevas notificaciones en backend
     notifs = get_notificaciones_pendientes_cliente(cid)
     
-    # 1. Si no hay notificaciones, devolvemos no_update. 
-    # La inicialización del 'Sin notificaciones nuevas' se maneja en build_simulador_movil_layout.
+    # Si NO hay nuevas, no hacemos nada (mantenemos la que ya está en pantalla, si hay alguna)
     if not notifs:
-        # Si ya estábamos mostrando 'Sin notificaciones', no hacemos nada para evitar el callback loop.
         return no_update 
     
-    cards = []
+    # 2. Si HAY nuevas:
+    # Nos quedamos solo con la ÚLTIMA de la lista (la más reciente)
+    # y marcamos TODAS las pendientes como leídas para que no vuelvan a salir.
+    latest_notif = notifs[-1] 
+    
     for notif in notifs:
-        link = f"/sim-movil/{cid}/verificar/{notif['link'].split('/')[-1]}"
-        cards.append(html.Div(className='mobile-notif', children=[
-            html.Div(className='app-title', children=[html.Span('💧'), html.Span('GeSAI App')]),
-            html.Div(className='title', children='Alerta de Fuga'),
-            html.Div(className='body', children=notif['mensaje']),
-            dcc.Link('Verificar', href=link, className='mobile-btn')
-        ]))
         marcar_notificacion_leida(notif['notificacion_id'])
     
-    return cards
-
+    # 3. Construimos LA tarjeta (Solo una)
+    link = f"/sim-movil/{cid}/verificar/{latest_notif['link'].split('/')[-1]}"
+    
+    card = html.Div(className='mobile-notif animated-bounce-in', children=[
+        html.Div(className='app-title', children=[html.Span('💧'), html.Span('GeSAI App')]),
+        html.Div(className='title', children='Nueva Alerta de Fuga'),
+        html.Div(className='body', children=latest_notif['mensaje']),
+        dcc.Link('Verificar', href=link, className='mobile-btn')
+    ])
+    
+    # 4. DEVOLVEMOS SOLO ESTA TARJETA
+    # Al devolver [card], Dash elimina todo lo que hubiera antes en el div
+    # y pone solo este elemento nuevo.
+    return [card]
 
 @callback(
     [Output('survey-result', 'children'), Output('url', 'pathname', allow_duplicate=True)],
@@ -681,7 +672,7 @@ app.clientside_callback(
 # -------- SERVIR PDF DE INFORME TÉCNICO --------
 @app.server.route('/download/informe/<int:id>')
 def download_informe(id):
-    # Obtenim dades incidència
+    # 1. Obtener datos de la incidencia
     data = get_detalles_incidencia(id)
     if not data.get("success"):
         return "No existe", 404
@@ -689,17 +680,20 @@ def download_informe(id):
     inc = data["datos_incidencia"]
     cli = data["datos_cliente"]
 
-    # Crear histórico dummy (como hacías en el callback)
-    hist = pd.DataFrame({
-        "FECHA_HORA": pd.date_range(start="2024-01-01", periods=24, freq="h"),
-        "CONSUMO_REAL": [10]*20 + [80,90,100,110]
-    })
+    # 2. Detectar si es fuga para activar la inyección de datos en el motor
+    estado = str(inc.get('estado', '')).upper()
+    es_fuga = "GRAVE" in estado or "MODERADA" in estado
 
-    # Generar PDF
+    # 3. LLAMADA AL MOTOR (Esto trae los datos reales/variados, no el 01/01)
+    # Usamos el ID del cliente para buscar en el CSV
+    hist = get_consumo_historico(cli.get('cliente_id'), es_fuga=es_fuga)
+
+    # 4. Generar PDF
     filename = generar_informe_tecnico_pdf(id, cli, inc, hist)
 
     # Enviar fichero al navegador
-    return send_file(filename, as_attachment=False)
+    return send_file(filename, as_attachment=True)
+
 
 @app.server.route('/download/carta/<int:id>')
 def download_carta(id):
@@ -709,7 +703,7 @@ def download_carta(id):
 
     cli = data["datos_cliente"]
     filename = generar_carta_postal_pdf(id, cli)
-    return send_file(filename, as_attachment=False)
+    return send_file(filename, as_attachment=True)
 
 
 
