@@ -1,1 +1,28 @@
+# Web App & Dashboard 
+dash==3.0.4
+dash-bootstrap-components==2.0.4
+Flask==3.1.2
+Werkzeug>=3.0.0
 
+# Versiones fijas para evitar el error de "InconsistentVersionWarning"
+lightgbm>=4.0.0
+scikit-learn==1.7.2
+joblib==1.5.2
+shap>=0.40.0
+
+# Ciencia de Datos & Big Data 
+pandas==2.3.3
+numpy==2.3.5
+dask[complete]>=2023.0.0
+pyarrow>=14.0.0
+holidays>=0.40.0
+
+# Gráficos & Reportes 
+matplotlib==3.7.1
+seaborn==0.13.2
+fpdf==1.7.2
+
+# Ciberseguridad & Utilidades ---
+cryptography==46.0.3
+Faker==38.2.0
+tqdm>=4.60.0
