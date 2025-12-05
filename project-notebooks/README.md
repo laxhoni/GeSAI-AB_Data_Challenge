@@ -6,7 +6,7 @@ Este directorio contiene el flujo de trabajo secuencial ("Pipeline") de Ciencia 
 
 ## Índice de Notebooks
 
-### [data-preparation.ipynb](https://www.google.com/search?q=data-preparation.ipynb)
+### [data-preparation.ipynb](https://github.com/laxhoni/GeSAI-AB_Data_Challenge/blob/main/project-notebooks/data-preparation.ipynb)
 
 **Ingeniería de Datos y ETL Distribuido**
 
@@ -20,7 +20,7 @@ Este *notebook* aborda el desafío de procesar el dataset masivo proporcionado p
   * **Limpieza:** Imputación de valores nulos, corrección de tipos de datos y eliminación estricta de duplicados.
   * **Salida:** Generación del archivo maestro `dataset_FINAL_COMPLETO.parquet`.
 
-### [model-training.ipynb](https://www.google.com/search?q=model-training.ipynb)
+### [model-training.ipynb](https://github.com/laxhoni/GeSAI-AB_Data_Challenge/blob/main/project-notebooks/model-training.ipynb)
 
 **Entrenamiento, Optimización y Exportación de Modelos**
 
@@ -37,7 +37,7 @@ Núcleo del modelado predictivo. Se justifica el cambio de arquitectura de LSTM 
   * **Optimización (Threshold Tuning):** Análisis de sensibilidad para ajustar el umbral de decisión (fijado finalmente en **0.30**) para maximizar el *F1-Score* y el *Recall*.
   * **Salida:** Exportación de modelos `.joblib` y el dataset de simulación `datos_simulacion_features.csv`.
 
-### [prediction-meta-analysis.ipynb](https://www.google.com/search?q=prediction-meta-analysis.ipynb)
+### [prediction-meta-analysis.ipynb](https://github.com/laxhoni/GeSAI-AB_Data_Challenge/blob/main/project-notebooks/prediction-meta-analysis.ipynb)
 
 **Meta-Análisis y Lógica de Negocio**
 
@@ -52,7 +52,7 @@ Este *notebook* no entrena modelos, sino que define las reglas de negocio que in
       * 🟢 **Fuga Leve / No Fuga:** Riesgo bajo o decreciente.
   * **Validación:** Visualización de la distribución de alertas para confirmar la reducción de falsos positivos.
 
-### [prediction-XAI.ipynb](https://www.google.com/search?q=prediction-XAI.ipynb)
+### [prediction-XAI.ipynb](https://github.com/laxhoni/GeSAI-AB_Data_Challenge/blob/main/project-notebooks/prediction-XAI.ipynb)
 
 **Explicabilidad del Modelo (XAI)**
 
@@ -62,7 +62,7 @@ Enfoque de "Caja Blanca" para garantizar la transparencia y confianza en el algo
   * **Análisis Global:** Identificación de las variables más influyentes en el modelo (ej. Consumo mínimo nocturno, Antigüedad del contador).
   * **Análisis Local:** Explicación caso por caso. Permite responder a la pregunta: *"¿Por qué el sistema ha marcado esta lectura específica como una fuga grave?"*, desglosando la contribución de cada variable a la puntuación final.
 
-### [cyber-security.ipynb](https://www.google.com/search?q=05_Security_Audit.ipynb)
+### [cyber-security.ipynb](https://github.com/laxhoni/GeSAI-AB_Data_Challenge/blob/main/project-notebooks/cyber-security.ipynb)
 
 **Auditoría de Seguridad y Criptografía**
 
