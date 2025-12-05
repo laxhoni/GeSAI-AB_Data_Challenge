@@ -1,8 +1,4 @@
-Aquí tienes el README actualizado. He añadido la sección **05** manteniendo el mismo estilo profesional y estructura que el resto del documento, y he actualizado la lista de orden de ejecución al final.
-
------
-
-# Laboratorio de Data Science: Proyecto GeSAI
+# GeSAI Project Notebooks 
 
 Este directorio contiene el flujo de trabajo secuencial ("Pipeline") de Ciencia de Datos desarrollado para el proyecto GeSAI. Los *notebooks* están numerados para asegurar la reproducibilidad de los experimentos, desde la ingesta de datos crudos hasta la validación de negocio y la auditoría de seguridad.
 
