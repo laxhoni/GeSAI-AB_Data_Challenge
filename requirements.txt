@@ -1,28 +1,31 @@
-# Web App & Dashboard 
+# --- Web App & Dashboard ---
 dash==3.0.4
 dash-bootstrap-components==2.0.4
-Flask==3.1.2
+# Flask fijado a 3.0.3 porque Dash aun no soporta la 3.1.x
+Flask==3.0.3
 Werkzeug>=3.0.0
 
-# Versiones fijas para evitar el error de "InconsistentVersionWarning"
+# --- Inteligencia Artificial ---
 lightgbm>=4.0.0
 scikit-learn==1.7.2
 joblib==1.5.2
-shap>=0.40.0
+# SHAP fijado a 0.45.0 para que no exija Numpy 2.0
+shap==0.45.0
 
-# Ciencia de Datos & Big Data 
+# --- Ciencia de Datos ---
 pandas==2.3.3
-numpy==2.3.5
+# Numpy limitado a <2.0.0 para compatibilidad general en Windows
+numpy<2.0.0
 dask[complete]>=2023.0.0
 pyarrow>=14.0.0
 holidays>=0.40.0
 
-# Gráficos & Reportes 
+# --- Gráficos & Reportes ---
 matplotlib==3.7.1
 seaborn==0.13.2
 fpdf==1.7.2
 
-# Ciberseguridad & Utilidades ---
+# --- Utils ---
 cryptography==46.0.3
 Faker==38.2.0
 tqdm>=4.60.0
