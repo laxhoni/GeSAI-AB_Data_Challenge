@@ -11,12 +11,19 @@ from faker import Faker
 from reports_manager import generar_carta_postal_pdf, generar_informe_tecnico_pdf
 import json
 
+# --- IMPORTAMOS EL GESTOR DE CRIPTOGRAFÍA ---
+from crypto_manager import (
+    verificar_password, 
+    cifrar_pii, 
+    descifrar_pii, 
+    generar_token_seguro
+)
+
 # --- 1. CONFIGURACIÓN ---
-DB_NAME = 'gesai.db'
-MODELOS_DIR = '../data/processed-data/'
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(CURRENT_DIR)
+BASE_DIR = os.path.dirname(CURRENT_DIR) # Raíz del proyecto
 DB_PATH = os.path.join(BASE_DIR, 'gesai.db')
+MODELOS_DIR = os.path.join(BASE_DIR, 'data', 'processed-data')
 
 # Umbrales de Negocio
 UMBRAL_SEGURIDAD = 0.30
@@ -25,12 +32,14 @@ UMBRAL_CRITICO = 0.85
 TENDENCIA_RAPIDA = 0.05
 TENDENCIA_ESTRUCTURAL = 0.15
 
-faker = Faker('es_ES')
+# Silenciar warnings versiones sklearn
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
+faker = Faker('es_ES')
 modelos_ia = {}
 features_modelo = []
-
-
 
 def _conectar_bbdd():
     try:
@@ -43,34 +52,10 @@ def _conectar_bbdd():
         print(f"❌ Error conectando a BBDD: {e}")
         return None
 
-def get_lista_incidencias_activas(filtro="todas"):
-    conn = _conectar_bbdd()
-    # PROTECCIÓN 1: Si no hay conexión, devolver lista vacía sin romper nada
-    if not conn: 
-        return []
-    
-    try:
-        sql = "SELECT i.*, c.nombre as cliente_nombre FROM incidencias i JOIN clientes c ON i.cliente_id = c.cliente_id"
-        if filtro != "todas": sql += f" WHERE i.estado LIKE '%{filtro}%'"
-        sql += " ORDER BY i.id DESC LIMIT 50"
-        
-        cur = conn.cursor()
-        cur.execute(sql)
-        return [dict(r) for r in cur.fetchall()]
-        
-    except Exception as e:
-        # PROTECCIÓN 2: Si la tabla no existe o hay error SQL, imprimir y no romper
-        print(f"⚠️ Error leyendo incidencias: {e}")
-        return []
-        
-    finally: 
-        conn.close()
-        
-
 # --- 2. INICIALIZACIÓN ---
 def inicializar_motor():
     global modelos_ia, features_modelo
-    print("--- INICIALIZANDO MOTOR GeSAI ---")
+    print("--- INICIALIZANDO MOTOR GeSAI (MODO SEGURO) ---")
     try:
         modelos_ia['HOY'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_HOY.joblib'))
         modelos_ia['MANANA'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_MANANA.joblib'))
@@ -98,46 +83,28 @@ def _aplicar_reglas(p_hoy, p_manana, p_7dias):
 
 
 # --- 3. FUNCIÓN DE OBTENCIÓN DE HISTÓRICO REAL ---
-
 def get_consumo_historico(cliente_id, es_fuga=False):
-    """
-    Recupera historial REAL.
-    Usa random.seed para que la inyección de la fuga sea SIEMPRE IGUAL
-    para el mismo cliente.
-    """
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path_datos = os.path.join(base_dir, 'data', 'processed-data', 'datos_simulacion_features.csv')
     
-    # FIJAR LA SEMILLA CON EL ID DEL CLIENTE
-    # Esto garantiza que si hay que inventar/inyectar algo, siempre sea igual.
     random.seed(str(cliente_id))
     
     try:
         if os.path.exists(path_datos):
             df = pd.read_csv(path_datos, usecols=['POLISSA_SUBM', 'FECHA_HORA_CRONO', 'CONSUMO_REAL'], dtype={'POLISSA_SUBM': str})
-            
-            # Filtrado estricto
             df_real = df[df['POLISSA_SUBM'] == str(cliente_id)].copy()
             
             if df_real.empty:
-                print(f"❌ No existe cliente {cliente_id} en CSV")
                 return pd.DataFrame()
 
-            print(f"✅ DATOS REALES ENCONTRADOS: {len(df_real)} registros")
-
-            # Fechas
             df_real['FECHA_HORA'] = pd.to_datetime(df_real['FECHA_HORA_CRONO'], errors='coerce')
             df_real = df_real.sort_values('FECHA_HORA')
-            
-            # Últimos 30 días
             df_final = df_real.tail(720)[['FECHA_HORA', 'CONSUMO_REAL']].copy()
             
             if not df_final.empty:
-                # Desplazar a HOY
                 ultimo = df_final['FECHA_HORA'].max()
                 df_final['FECHA_HORA'] += (pd.Timestamp.now() - ultimo)
                 
-                # INYECCIÓN DETERMINISTA (Gracias al seed del principio)
                 if es_fuga:
                     puntos = len(df_final)
                     duracion = min(random.randint(48, 120), puntos)
@@ -145,62 +112,41 @@ def get_consumo_historico(cliente_id, es_fuga=False):
                     df_final.iloc[-duracion:, 1] += extra
 
                 return df_final
-
     except Exception as e:
         print(f"⚠️ Error CSV: {e}")
 
     return pd.DataFrame()
 
-# --- 4. FUNCIÓN DE DETECCIÓN (Acepta datos ordenados) ---
+# --- 4. DETECCIÓN SIMULADA (Escritura Segura) ---
 def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = None) -> dict:
-    """
-    Procesa una lectura. 
-    Si 'datos_externos' está presente (viene del backend ordenado), usa esos datos reales.
-    Si no, usa aleatorios (fallback).
-    """
     X_input = None
-    origen_datos = "Simulado"
     
-    # 1. Preparar Datos Reales del Backend
+    # 1. Preparar Datos
     if datos_externos is not None and modelos_ia:
         try:
-            # Convertir la Serie (fila) a DataFrame
             fila = pd.DataFrame([datos_externos])
-            
-            # Filtrar solo las columnas que el modelo necesita (quitamos fechas y IDs)
             cols_validas = [c for c in features_modelo if c in fila.columns]
             X_input = fila[cols_validas].copy()
-            
-            # Limpieza de tipos obligatoria
             CAT = ['US_AIGUA_SUBM', 'TIPO_DIA']
             for c in X_input.columns:
                 if c in CAT: X_input[c] = X_input[c].astype('category')
                 else: X_input[c] = pd.to_numeric(X_input[c], errors='coerce').fillna(0.0)
-            
-            origen_datos = "Lectura Real IoT"
-        except Exception as e:
-            print(f"Error procesando datos externos: {e}")
-            X_input = None
+        except: X_input = None
     
     # 2. Predicción
     if modelos_ia and X_input is not None:
         try:
             p_hoy = modelos_ia['HOY'].predict_proba(X_input, raw_score=False)[:, 1][0]
-            p_man = modelos_ia['MANANA'].predict_proba(X_input, raw_score=False)[:, 1][0]
-            p_7d = modelos_ia['7DIAS'].predict_proba(X_input, raw_score=False)[:, 1][0]
-        except: p_hoy, p_man, p_7d = 0.1, 0.1, 0.1
+        except: p_hoy = 0.1
     else:
-        # Fallback aleatorio
         p_hoy = random.random()
-        p_man, p_7d = p_hoy, p_hoy
 
     # 3. Clasificación
-    estado, detalle = _aplicar_reglas(p_hoy, p_man, p_7d)
-    
+    estado, detalle = _aplicar_reglas(p_hoy, p_hoy, p_hoy) # Simplificado para el ejemplo
     if "No Fuga" in estado: 
         return {'status': 'OK', 'message': f'Lectura normal ({p_hoy:.1%})'}
 
-    # 4. BBDD
+    # 4. BBDD (Gestión Segura)
     conn = _conectar_bbdd()
     if not conn: return {'status': 'ERROR'}
     try:
@@ -208,16 +154,24 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
         cur.execute("SELECT * FROM clientes WHERE cliente_id = ?", (str(cliente_id),))
         res = cur.fetchone()
         
+        datos_cli = {}
         if not res:
-            # Crear cliente dummy si llega un ID nuevo
+            # Crear cliente dummy (CIFRANDO DATOS)
             nom = faker.name()
             email = f"{nom.split()[0]}@test.com"
-            cur.execute("INSERT INTO clientes VALUES (?, ?, ?, ?, ?)", (str(cliente_id), nom, "600", email, "Barcelona"))
+            
+            ### SEGURIDAD: Ciframos antes de guardar ###
+            cur.execute(
+                "INSERT INTO clientes VALUES (?, ?, ?, ?, ?)", 
+                (str(cliente_id), cifrar_pii(nom), cifrar_pii("600"), cifrar_pii(email), cifrar_pii("Barcelona"))
+            )
             datos_cli = {'nombre': nom, 'email': email, 'direccion': "Barcelona"}
         else:
+            # Cliente existente: Desciframos para uso interno temporal
             datos_cli = dict(res)
-            # Asegurar nulos
-            if datos_cli['email'] == 'None' or datos_cli['email'] == '': datos_cli['email'] = None
+            ### SEGURIDAD: Desciframos para saber si tiene email ###
+            datos_cli['email'] = descifrar_pii(datos_cli['email'])
+            datos_cli['nombre'] = descifrar_pii(datos_cli['nombre'])
 
         desc = f"{estado}. Prob: {p_hoy:.0%}. {detalle}"
         cur.execute("INSERT INTO incidencias (cliente_id, estado, verificacion, descripcion) VALUES (?, ?, ?, ?)",
@@ -225,45 +179,78 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
         new_id = cur.lastrowid
 
         # Acciones
-        tiene_email = (datos_cli['email'] is not None)
+        tiene_email = (datos_cli.get('email') is not None)
         msg_extra = ""
+        
         if "Leve" not in estado:
             if not tiene_email:
                 cur.execute("UPDATE incidencias SET verificacion = 'CARTA PENDIENTE' WHERE id = ?", (new_id,))
                 msg_extra = "Carta Pendiente"
             else:
-                token = f"tk_{new_id}_{int(time.time())}"
+                ### SEGURIDAD: Token Criptográfico Seguro ###
+                token = generar_token_seguro() 
                 link = f"http://127.0.0.1:8050/verificar/{token}"
                 msg = f"Hola {datos_cli['nombre']}, alerta GeSAI: {estado}."
+                
                 cur.execute("INSERT INTO tokens_verificacion (token, incidencia_id) VALUES (?, ?)", (token, new_id))
                 cur.execute("INSERT INTO notificaciones (cliente_id, mensaje, link) VALUES (?, ?, ?)", (str(cliente_id), msg, link))
                 msg_extra = "Push Enviado"
-
-        # Generar informe técnico siempre
-        # historico = _obtener_historico_simulado(cliente_id)
-        # datos_inc_pdf = {'estado': estado, 'descripcion': desc, 'prob_hoy': p_hoy}
-        # generar_informe_tecnico_pdf(new_id, datos_cli, datos_inc_pdf, historico)
-
-        #####
 
         conn.commit()
         return {'status': 'ALERTA', 'message': f"{estado} - {msg_extra}"}
     finally:
         conn.close()
 
-# --- FUNCIONES LECTURA APP (Sin Cripto) ---
+# --- FUNCIONES LECTURA APP (CON SEGURIDAD) ---
+
 def verificar_credenciales(u, p):
+    """Verifica hash en lugar de texto plano."""
     conn = _conectar_bbdd()
     try:
         cur = conn.cursor()
-        # Login simple: Texto plano
+        # Usamos parámetros '?' para evitar inyección SQL
         cur.execute("SELECT * FROM usuarios_empresa WHERE email = ?", (u,))
         row = cur.fetchone()
-        if row and row['contrasena'] == p: 
-            return {'success': True, 'rol': 'Empresa', 'nombre': row['nombre']}
+        
+        if row:
+            # hash_guardado está en la columna 'contrasena'
+            hash_guardado = row['contrasena']
+            ### SEGURIDAD: Verificación Criptográfica ###
+            if verificar_password(p, hash_guardado):
+                return {'success': True, 'rol': 'Empresa', 'nombre': row['nombre']}
     finally: conn.close()
     return {'success': False, 'message': 'Credenciales incorrectas'}
 
+def get_lista_incidencias_activas(filtro="todas"):
+    conn = _conectar_bbdd()
+    # PROTECCIÓN 1: Si no hay conexión
+    if not conn: return []
+    
+    try:
+        # Prevenimos Inyección SQL en el filtro usando '?'
+        sql = "SELECT i.*, c.nombre as cliente_nombre FROM incidencias i JOIN clientes c ON i.cliente_id = c.cliente_id"
+        params = []
+        
+        if filtro != "todas": 
+            sql += " WHERE i.estado LIKE ?"
+            params.append(f"%{filtro}%")
+            
+        sql += " ORDER BY i.id DESC LIMIT 50"
+        
+        cur = conn.cursor()
+        cur.execute(sql, params) # Pasamos params de forma segura
+        rows = [dict(r) for r in cur.fetchall()]
+        
+        # ### SEGURIDAD: Descifrar nombres para la UI ###
+        for r in rows:
+            r['cliente_nombre'] = descifrar_pii(r['cliente_nombre'])
+            
+        return rows
+        
+    except Exception as e:
+        print(f"⚠️ Error leyendo incidencias: {e}")
+        return []
+    finally: conn.close()
 
 def get_detalles_incidencia(id):
     conn = _conectar_bbdd()
@@ -272,17 +259,26 @@ def get_detalles_incidencia(id):
         cur.execute("SELECT * FROM incidencias WHERE id=?", (id,))
         inc = cur.fetchone()
         if not inc: return {'success': False}
+        
         cur.execute("SELECT * FROM clientes WHERE cliente_id=?", (inc['cliente_id'],))
         cli = cur.fetchone()
         
         datos_inc = dict(inc)
-        # Intenta parsear probabilidad del texto
         import re
         match = re.search(r"Prob: (\d+)", inc['descripcion'])
         prob = float(match.group(1))/100 if match else 0.9
         datos_inc['prob_hoy'] = prob
         
-        return {'success': True, 'datos_incidencia': datos_inc, 'datos_cliente': dict(cli) if cli else {}}
+        # ### SEGURIDAD: Descifrar datos sensibles del cliente para el Modal/PDF ###
+        datos_cli = {}
+        if cli:
+            datos_cli = dict(cli)
+            datos_cli['nombre'] = descifrar_pii(datos_cli['nombre'])
+            datos_cli['telefono'] = descifrar_pii(datos_cli['telefono'])
+            datos_cli['email'] = descifrar_pii(datos_cli['email'])
+            datos_cli['direccion'] = descifrar_pii(datos_cli['direccion'])
+        
+        return {'success': True, 'datos_incidencia': datos_inc, 'datos_cliente': datos_cli}
     finally: conn.close()
 
 def get_notificaciones_pendientes_cliente(cid):
@@ -300,16 +296,14 @@ def marcar_notificacion_leida(nid):
 
 def validar_token_y_registrar(token, respuestas):
     """
-    Valida el token y guarda las respuestas de la encuesta en formato JSON
-    dentro de la columna 'encuesta_resultado'.
+    Valida token y guarda encuesta.
     """
     conn = _conectar_bbdd()
     if not conn: return {'success': False, 'message': 'Error de conexión'}
 
     try:
         cur = conn.cursor()
-
-        # 1. Verificar si el token existe
+        # Verificar token
         cur.execute("SELECT incidencia_id FROM tokens_verificacion WHERE token=?", (token,))
         row = cur.fetchone()
 
@@ -317,21 +311,12 @@ def validar_token_y_registrar(token, respuestas):
             return {'success': False, 'message': 'Token inválido o ya utilizado'}
 
         inc_id = row['incidencia_id']
-
-        # 2. Convertir el diccionario/lista de respuestas a Texto JSON
         respuestas_json = json.dumps(respuestas, ensure_ascii=False)
 
-        # 3. Actualizar la incidencia: 
-        #    - Cambiamos estado de verificación
-        #    - Guardamos el JSON en la nueva columna
-        cur.execute("""
-            UPDATE incidencias 
-            SET verificacion='VERIFICADO (Encuesta)', 
-                encuesta_resultado = ? 
-            WHERE id=?
-        """, (respuestas_json, inc_id))
-
-        # 4. Eliminar el token para que no se pueda volver a usar
+        # Actualizar
+        cur.execute("UPDATE incidencias SET verificacion='VERIFICADO (Encuesta)', encuesta_resultado = ? WHERE id=?", (respuestas_json, inc_id))
+        
+        # Borrar token usado (Seguridad)
         cur.execute("DELETE FROM tokens_verificacion WHERE token=?", (token,))
 
         conn.commit()
