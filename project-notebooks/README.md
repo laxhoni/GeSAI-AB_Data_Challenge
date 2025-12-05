@@ -62,7 +62,7 @@ Enfoque de "Caja Blanca" para garantizar la transparencia y confianza en el algo
   * **Análisis Global:** Identificación de las variables más influyentes en el modelo (ej. Consumo mínimo nocturno, Antigüedad del contador).
   * **Análisis Local:** Explicación caso por caso. Permite responder a la pregunta: *"¿Por qué el sistema ha marcado esta lectura específica como una fuga grave?"*, desglosando la contribución de cada variable a la puntuación final.
 
-### [05\cyber_security\_.ipynb](https://www.google.com/search?q=05_Security_Audit.ipynb)
+### [05\cyber\_security\_.ipynb](https://www.google.com/search?q=05_Security_Audit.ipynb)
 
 **Auditoría de Seguridad y Criptografía**
 
