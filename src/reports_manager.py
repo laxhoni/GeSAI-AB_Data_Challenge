@@ -269,7 +269,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     # Disclaimer al pie
     pdf.set_y(-25)
     pdf.set_font('Helvetica', '', 6); pdf.set_text_color(180, 180, 180)
-    pdf.multi_cell(0, 3, "AVÍS LEGAL: Document informatiu basat en anàlisi predictiva. No substitueix inspecció física oficial.", 0, 'C')
+    pdf.multi_cell(0, 3, "AVÍS LEGAL: Document informatiu basat en anàlisi predictiu. No substitueix inspecció física oficial.", 0, 'C')
 
     output_dir = '../generated_reports/technical_reports/'
     os.makedirs(output_dir, exist_ok=True)
