@@ -5,18 +5,18 @@ import pandas as pd
 from faker import Faker
 import random
 import time
+import getpass # Para ocultar la contraseña al escribirla
 
-# --- TRUCO: Importar módulos de la carpeta src desde la raíz ---
+# --- IMPORTACIONES ---
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-# Al importar, si no existen las claves, se generan y salen los mensajes.
-# Si ya existen, no sale nada.
-from crypto_manager import hashear_password, cifrar_pii
-# -------------------------------------------------------------
+# Importamos la nueva función de validación
+from crypto_manager import hashear_password, cifrar_pii, validar_fortaleza_password
+# ---------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'gesai.db')
 PATH_DATOS_REALES = os.path.join(BASE_DIR, 'data', 'processed-data', 'datos_simulacion_features.csv') 
-NUM_CLIENTES_SIMULACION = 50
+NUM_CLIENTES_SIMULACION = 100
 
 faker = Faker('es_ES')
 
@@ -40,37 +40,69 @@ def crear_tablas(conn):
     conn.commit()
     print("✅ Tablas listas.")
 
+def solicitar_password_admin():
+    """Bucle infinito hasta que el usuario ponga una password segura."""
+    print("\n🔐 CONFIGURACIÓN DE SEGURIDAD")
+    print("Por política de seguridad, debe establecer una contraseña ROBUSTA para el Admin.")
+    print("Requisitos: 12+ caracteres, Mayús, Minús, Número y Símbolo.")
+    
+    while True:
+        # getpass oculta lo que escribes (como en Linux/Login real)
+        try:
+            p1 = getpass.getpass(">>> Introduzca nueva contraseña Admin: ")
+        except:
+            # Fallback por si getpass falla en algunas consolas de IDE
+            p1 = input(">>> Introduzca nueva contraseña Admin: ")
+            
+        es_valida, mensaje = validar_fortaleza_password(p1)
+        
+        if not es_valida:
+            print(f"❌ DÉBIL: {mensaje}")
+            continue
+            
+        try:
+            p2 = getpass.getpass(">>> Repita la contraseña: ")
+        except:
+            p2 = input(">>> Repita la contraseña: ")
+            
+        if p1 != p2:
+            print("❌ Las contraseñas no coinciden. Inténtelo de nuevo.")
+            continue
+            
+        print("✅ Contraseña aceptada y hasheada.")
+        return p1
+
 def insertar_datos_iniciales(conn):
     cursor = conn.cursor()
     
-    # 1. ADMIN
+    # 1. ADMIN (INTERACTIVO)
     try:
-        password_seguro = hashear_password('1234') 
+        # Pedimos la password segura al usuario
+        pass_texto_plano = solicitar_password_admin()
+        
+        password_seguro = hashear_password(pass_texto_plano) 
         cursor.execute(
             "INSERT INTO usuarios_empresa (email, contrasena, nombre) VALUES (?, ?, ?)",
             ('empresa@gesai.com', password_seguro, 'Admin GeSAI')
         )
-        print("👤 Usuario admin creado.")
+        print("👤 Usuario 'empresa@gesai.com' creado correctamente.")
     except sqlite3.IntegrityError:
         pass
 
-    # 2. CLIENTES (CON LÓGICA DE CARTA)
-    print(f"🔄 Generando {NUM_CLIENTES_SIMULACION} clientes (Mix Digital/Postal)...")
+    # 2. CLIENTES
+    print(f"\n🔄 Generando {NUM_CLIENTES_SIMULACION} clientes (Mix Digital/Postal)...")
     ids_reales = []
     
-    # Intentar cargar IDs reales del CSV para que coincidan con la simulación
     if os.path.exists(PATH_DATOS_REALES):
         try:
             df = pd.read_csv(PATH_DATOS_REALES, usecols=['POLISSA_SUBM'])
             unique = df['POLISSA_SUBM'].unique().tolist()
-            # Cogemos una muestra
             if len(unique) >= NUM_CLIENTES_SIMULACION:
                 ids_reales = random.sample(unique, NUM_CLIENTES_SIMULACION)
             else:
                 ids_reales = unique
         except: pass
     
-    # Rellenar con sintéticos si faltan
     while len(ids_reales) < NUM_CLIENTES_SIMULACION:
         ids_reales.append(str(1000 + len(ids_reales)))
 
@@ -78,20 +110,14 @@ def insertar_datos_iniciales(conn):
     clientes_carta = 0
     
     for i, c_id in enumerate(ids_reales):
-        # LÓGICA: 1 de cada 3 (índices 0, 3, 6...) NO tiene contacto digital
-        es_digital = (i % 3 != 0) 
-
+        es_digital = (i % 4 != 0) 
         raw_nombre = faker.name()
         raw_addr = faker.address()
-        
-        # Si es digital, generamos telf/email. Si no, None.
         raw_telf = faker.phone_number() if es_digital else None
         raw_email = f"{raw_nombre.split()[0].lower()}@mail.com" if es_digital else None
         
-        # Contadores para el log
         if not es_digital: clientes_carta += 1
 
-        # Cifrado (cifrar_pii devuelve None si recibe None, así que es seguro)
         enc_nombre = cifrar_pii(raw_nombre)
         enc_addr = cifrar_pii(raw_addr)
         enc_telf = cifrar_pii(raw_telf)
@@ -107,23 +133,17 @@ def insertar_datos_iniciales(conn):
             
     conn.commit()
     print(f"✅ {count} clientes insertados.")
-    print(f"   📊 {count - clientes_carta} Digitales (App)")
-    print(f"   📮 {clientes_carta} Analógicos (Solo Carta Postal)")
+    print(f"   📊 {count - clientes_carta} Digitales")
+    print(f"   📮 {clientes_carta} Analógicos")
 
 if __name__ == '__main__':
     print("--- INICIANDO RESET DE BASE DE DATOS ---")
-    
-    # Intento de borrado robusto
     if os.path.exists(DB_PATH):
         try:
             os.remove(DB_PATH)
             print("🗑️ BBDD antigua eliminada correctamente.")
         except PermissionError:
-            print("❌ ERROR FATAL: No se puede borrar 'gesai.db'.")
-            print("⚠️ CIERRA la app, el simulador o cualquier visor SQL y vuelve a intentarlo.")
-            sys.exit(1) # Paramos el script aquí
-        except Exception as e:
-            print(f"❌ Error borrando archivo: {e}")
+            print("❌ ERROR: Cierra la app/simulador antes de regenerar la BBDD.")
             sys.exit(1)
     
     conn = crear_conexion()

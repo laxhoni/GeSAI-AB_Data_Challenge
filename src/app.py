@@ -261,7 +261,7 @@ def build_login_layout():
                 ),
 
                 html.Button("Acceder al Sistema", id='btn-login', className='btn-primary'),
-                html.Div("Credenciales Demo: empresa@gesai.com / 1234", className='login-footer-note')
+                html.Div("Usuario: empresa@gesai.com\n Password: Introducida en terminal", className='login-footer-note')
             ])
         ])
     ])

@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import base64
 import datetime
@@ -202,3 +203,40 @@ def sanitizar_input_texto(texto):
 
 # Inicialización automática al importar
 generar_identidad_corporativa()
+
+# ==============================================================================
+# 5. POLÍTICA DE CONTRASEÑAS (NUEVO)
+# ==============================================================================
+def validar_fortaleza_password(password):
+    """
+    Verifica que la contraseña cumpla los requisitos de seguridad:
+    - Mínimo 12 caracteres (OWASP recomienda 12+).
+    - Al menos 1 mayúscula.
+    - Al menos 1 minúscula.
+    - Al menos 1 número.
+    - Al menos 1 carácter especial (!@#$%^&*...).
+    - No estar en la lista negra de contraseñas comunes.
+    
+    Retorna: (EsValida: bool, MensajeError: str)
+    """
+    if len(password) < 12:
+        return False, "La contraseña es muy corta. Mínimo 12 caracteres."
+
+    if not re.search(r"[A-Z]", password):
+        return False, "Debe contener al menos una letra MAYÚSCULA."
+
+    if not re.search(r"[a-z]", password):
+        return False, "Debe contener al menos una letra minúscula."
+
+    if not re.search(r"\d", password):
+        return False, "Debe contener al menos un NÚMERO."
+
+    if not re.search(r"[ !@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", password):
+        return False, "Debe contener al menos un CARÁCTER ESPECIAL (!@#$%)."
+
+    # Lista negra básica
+    blacklist = ['123456789012', 'password1234', 'admin1234567', 'gesai1234567']
+    if password.lower() in blacklist:
+        return False, "Esa contraseña es demasiado común o predecible."
+
+    return True, "Contraseña fuerte."

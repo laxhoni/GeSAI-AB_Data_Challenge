@@ -87,7 +87,7 @@ class PDF_GesAI(FPDF):
         if self.digital_signature:
             self.set_font('Courier', '', 4)
             self.set_text_color(160, 160, 160)
-            self.RotatedText(205, 290, "DIGITAL SIGNATURE (GeSAI PKI):", 90)
+            self.RotatedText(205, 290, "DIGITAL SIGNATURE (GeSAI PKI)", 90)
             
             sig = self.digital_signature
             chunk_size = 130
