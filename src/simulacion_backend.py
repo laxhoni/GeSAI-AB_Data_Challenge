@@ -19,7 +19,7 @@ PATH_DATOS_SIMULACION = os.path.join(BASE_DIR, 'data', 'processed-data', 'datos_
 def cargar_datos_simulacion():
     """Carga el CSV con los datos futuros para alimentar a la IA."""
     if not os.path.exists(PATH_DATOS_SIMULACION):
-        print(f"⚠️ No se encuentra el fichero de simulación: {PATH_DATOS_SIMULACION}")
+        print(f"[*] No se encuentra el fichero de simulación: {PATH_DATOS_SIMULACION}")
         return None
     try:
         # Leemos el CSV. Importante: asegurar tipos
@@ -27,25 +27,25 @@ def cargar_datos_simulacion():
         # Convertir a tipos numéricos lo que se pueda para evitar errores en el modelo
         return df
     except Exception as e:
-        print(f"⚠️ Error leyendo CSV simulación: {e}")
+        print(f" Error leyendo CSV simulación: {e}")
         return None
 
 def main():
     print("===========================================================")
-    print("   🚀 GeSAI BACKEND: SIMULADOR IOT + IA ACTIVA")
+    print("                 GeSAI BACKEND: SIMULADOR IOT + IA ACTIVA")
     print(f"   (Intervalo: {TIEMPO_ENTRE_LECTURAS}s | Fuente: datos_simulacion_features.csv)")
     print("===========================================================\n")
     
     # 1. Cargar Datos Reales
     df_simulacion = cargar_datos_simulacion()
     if df_simulacion is None or df_simulacion.empty:
-        print("❌ No hay datos para simular. Ejecuta primero el notebook de entrenamiento.")
+        print("[*] No hay datos para simular. Ejecuta primero el notebook de entrenamiento.")
         return
 
     # Convertimos a lista de diccionarios para acceso rápido
     # (Simulamos que llega un dato de un contador aleatorio cada vez)
     registros = df_simulacion.to_dict('records')
-    print(f"📡 Conectado a red IoT. {len(registros)} lecturas disponibles para streaming.\n")
+    print(f"[*] Conectado a red IoT. {len(registros)} lecturas disponibles para streaming.\n")
 
     try:
         while True:
