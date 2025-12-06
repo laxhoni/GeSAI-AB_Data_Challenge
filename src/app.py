@@ -7,7 +7,7 @@ import pandas as pd
 from flask import send_file
 import os
 
-# --- IMPORTS DE BACKEND ---
+# importar módulos internos
 from motor_gesai import (
     verificar_credenciales,
     get_lista_incidencias_activas,
@@ -19,14 +19,13 @@ from motor_gesai import (
 )
 from reports_manager import generar_informe_tecnico_pdf, generar_carta_postal_pdf
 
-# --- CONFIGURACIÓN DE RUTAS ---
+# Configuración de rutas
 current_dir = os.path.dirname(os.path.abspath(__file__))
 assets_path = os.path.join(current_dir, "assets")
 
-# --- INICIALIZACIÓN DASH ---
+# Inicialización dash
 external_stylesheets = [
     dbc.themes.BOOTSTRAP,
-    # la fuente Inter también está importada en CSS; mantenemos el enlace por compatibilidad
     "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
 ]
 
@@ -40,7 +39,7 @@ app = dash.Dash(
 
 
 # ------------------------------------------------------------
-# HELPERS / COMPONENTS (reutilizables)
+# HELPERS / COMPONENTS
 # ------------------------------------------------------------
 def kpi_card(titulo, valor, icono):
     return html.Div(className='kpi animated-fade', children=[
@@ -279,7 +278,6 @@ def build_empresa_layout(session_data):
         ]),
 
         html.Div(className='header-actions', children=[
-            # Toggle dark mode as a button (más atractivo)
             html.Button('Modo Noche', id='dark-mode-toggle', n_clicks=0, className='btn-darkmode'),
 
             html.Div(className='user-pill', style={'backgroundColor': 'transparent', 'border': '1px solid currentColor'}, children=[html.Span('👤'), html.Span(nombre_usuario)]),
@@ -306,7 +304,7 @@ def build_empresa_layout(session_data):
         html.Div(className='right-column', children=[
             html.Div(id='modal-detalles'),
             html.Div(className='card animated-card', children=[html.Div(id='incidencias-container')]),
-            html.Div(id='dummy-download-output')  # placeholder for clientside outputs
+            html.Div(id='dummy-download-output')  
         ])
     ])
 
@@ -333,17 +331,15 @@ app.layout = html.Div([
     [Output('session-store', 'data'),
      Output('login-error', 'children'),
      Output('url', 'pathname')],
-    Input('btn-login', 'n_clicks'),  # <--- Escuchamos el click
+    Input('btn-login', 'n_clicks'),  
     [State('input-usuario', 'value'), State('input-password', 'value')],
-    prevent_initial_call=True  # <--- 1. IMPORTANTE: Evita que se ejecute al cargar la página
+    prevent_initial_call=True  
 )
 def login(n, u, p):
-    # --- 2. IMPORTANTE: Bloque de seguridad extra ---
     # Si n es None o 0, significa que nadie ha pulsado el botón aún.
     # Devolvemos "no_update" para NO cambiar nada en la pantalla.
     if not n:
         return no_update, no_update, no_update
-    # -----------------------------------------------
 
     res = verificar_credenciales(u, p)
     
@@ -486,15 +482,13 @@ def handle_details(n_card, n_close):
         inc, cli = data['datos_incidencia'], data['datos_cliente']
         tiene_contacto = cli.get("email") or cli.get("telefono")
 
-        # --- ESTILOS ---
+        # Estilos comunes botones
         estilo_btn = {
             "flex": "1", "textAlign": "center", "padding": "10px",
             "borderRadius": "6px", "textDecoration": "none", "color": "white",
             "fontWeight": "500", "fontSize": "0.9rem", "display": "flex",
             "alignItems": "center", "justifyContent": "center"
         }
-
-        # --- BOTONES (Con target="_blank" restaurado) ---
         
         # Botón Informe
         btn_informe = html.A(
@@ -511,7 +505,7 @@ def handle_details(n_card, n_close):
             btn_carta = html.A(
                 "📮 Carta Postal",
                 href=f"/download/carta/{inc['id']}",
-                target="_blank", # <--- ✅ ESTO ABRE LA PESTAÑA NUEVA
+                target="_blank", 
                 style={**estilo_btn, "backgroundColor": "#6B7280", "marginLeft": "10px"}
             )
             botones.append(btn_carta)
@@ -542,15 +536,11 @@ def handle_details(n_card, n_close):
 
     return no_update
 
-# src/app.py
-
 @callback(
     Output('div-notificaciones-movil', 'children'),
     Input('intervalo-notificaciones-movil', 'n_intervals'),
     State('store-cliente-id', 'data'),
     State('url', 'pathname')
-    # ❌ HEMOS QUITADO: State('div-notificaciones-movil', 'children')
-    # Ya no necesitamos saber qué había antes, vamos a machacarlo.
 )
 def mobile_poll(n, cid, path):
     if not path or not cid:

@@ -11,7 +11,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from motor_gesai import ejecutar_deteccion_simulada, _conectar_bbdd
 
-# Configuración
+# Configuración de la simulación
 TIEMPO_ENTRE_LECTURAS = 3  # Segundos
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH_DATOS_SIMULACION = os.path.join(BASE_DIR, 'data', 'processed-data', 'datos_simulacion_features.csv')
@@ -43,7 +43,7 @@ def main():
         return
 
     # Convertimos a lista de diccionarios para acceso rápido
-    # (Simulamos que llega un dato de un contador aleatorio cada vez)
+    # (Simulamos que llega un dato de un contador cada intervalo)
     registros = df_simulacion.to_dict('records')
     print(f"[*] Conectado a red IoT. {len(registros)} lecturas disponibles para streaming.\n")
 
