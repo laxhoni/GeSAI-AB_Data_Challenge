@@ -11,7 +11,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 
-# --- CONFIGURACIÓN DE RUTAS ---
+# Configuración de rutas
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 KEYS_DIR = os.path.join(BASE_DIR, 'keys')
 os.makedirs(KEYS_DIR, exist_ok=True)
@@ -22,7 +22,7 @@ PATH_CERTIFICADO = os.path.join(KEYS_DIR, 'gesai_certificate.pem')
 PATH_CLAVE_SIMETRICA = os.path.join(KEYS_DIR, 'secret.key')
 
 # ==============================================================================
-# 1. GESTIÓN DE CLAVES SIMÉTRICAS (Para Cifrar Datos en BBDD)
+# 1. GESTIÓN DE CLAVES SIMÉTRICAS (Para cifrar datos en la BBDD)
 # ==============================================================================
 def _cargar_o_crear_clave_simetrica():
     """Carga la clave maestra AES. Si no existe, la crea."""
@@ -33,7 +33,7 @@ def _cargar_o_crear_clave_simetrica():
         key = Fernet.generate_key()
         with open(PATH_CLAVE_SIMETRICA, 'wb') as key_file:
             key_file.write(key)
-        print("🔑 Nueva clave maestra de cifrado generada.")
+        print("[*] Nueva clave maestra de cifrado generada.")
         return key
 
 # Instancia global del cifrador (Singleton)
@@ -64,7 +64,7 @@ def descifrar_pii(texto_cifrado):
         return "[DATOS CORRUPTOS O CLAVE INCORRECTA]"
 
 # ==============================================================================
-# 2. GESTIÓN DE CONTRASEÑAS (Hashing Seguro con Scrypt)
+# 2. GESTIÓN DE CONTRASEÑAS (Hashing seguro con Scrypt)
 # ==============================================================================
 def hashear_password(password_plano):
     """
@@ -115,16 +115,16 @@ def generar_identidad_corporativa():
     if os.path.exists(PATH_CLAVE_PRIVADA) and os.path.exists(PATH_CERTIFICADO):
         return # Ya existen
 
-    print("🔐 Generando PKI Corporativa para GeSAI...")
+    print("[*] Generando PKI Corporativa para GeSAI...")
     
-    # 1. Generar Clave Privada RSA
+    # 1. Generar clave privada RSA
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
 
-    # 2. Datos del Certificado (Identity)
+    # 2. Datos del certificado (Identity)
     subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, u"ES"),
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Barcelona"),
@@ -132,7 +132,7 @@ def generar_identidad_corporativa():
         x509.NameAttribute(NameOID.COMMON_NAME, u"GeSAI Root CA"),
     ])
 
-    # 3. Construir Certificado
+    # 3. Construir certificado
     cert = x509.CertificateBuilder().subject_name(
         subject
     ).issuer_name(
@@ -160,7 +160,7 @@ def generar_identidad_corporativa():
     with open(PATH_CERTIFICADO, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
     
-    print("✅ Identidad Digital creada en /src/keys/")
+    print("[*] Identidad Digital creada en /src/keys/")
 
 def firmar_digitalmente(datos_bytes):
     """
@@ -205,7 +205,7 @@ def sanitizar_input_texto(texto):
 generar_identidad_corporativa()
 
 # ==============================================================================
-# 5. POLÍTICA DE CONTRASEÑAS (NUEVO)
+# 5. POLÍTICA DE CONTRASEÑAS
 # ==============================================================================
 def validar_fortaleza_password(password):
     """
