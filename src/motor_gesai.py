@@ -55,7 +55,7 @@ def _conectar_bbdd():
 # --- 2. INICIALIZACIÓN ---
 def inicializar_motor():
     global modelos_ia, features_modelo
-    print("--- INICIALIZANDO MOTOR GeSAI (MODO SEGURO) ---")
+    print("--- INICIALIZANDO MOTOR GeSAI (MODO SEGURO + ANTI-DUPLICADOS) ---")
     try:
         modelos_ia['HOY'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_HOY.joblib'))
         modelos_ia['MANANA'] = joblib.load(os.path.join(MODELOS_DIR, 'lgbm_model_TARGET_MANANA.joblib'))
@@ -84,27 +84,42 @@ def _aplicar_reglas(p_hoy, p_manana, p_7dias):
 
 # --- 3. FUNCIÓN DE OBTENCIÓN DE HISTÓRICO REAL ---
 def get_consumo_historico(cliente_id, es_fuga=False):
+    """
+    Recupera historial REAL.
+    Usa random.seed para que la inyección de la fuga sea SIEMPRE IGUAL
+    para el mismo cliente.
+    """
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path_datos = os.path.join(base_dir, 'data', 'processed-data', 'datos_simulacion_features.csv')
     
+    # FIJAR LA SEMILLA CON EL ID DEL CLIENTE
     random.seed(str(cliente_id))
     
     try:
         if os.path.exists(path_datos):
             df = pd.read_csv(path_datos, usecols=['POLISSA_SUBM', 'FECHA_HORA_CRONO', 'CONSUMO_REAL'], dtype={'POLISSA_SUBM': str})
+            
+            # Filtrado estricto
             df_real = df[df['POLISSA_SUBM'] == str(cliente_id)].copy()
             
             if df_real.empty:
-                return pd.DataFrame()
+                # Si no existe, devolvemos vacío (el PDF dirá "Sin datos")
+                # O puedes descomentar el fallback si prefieres simulación siempre
+                return pd.DataFrame() 
 
+            # Fechas
             df_real['FECHA_HORA'] = pd.to_datetime(df_real['FECHA_HORA_CRONO'], errors='coerce')
             df_real = df_real.sort_values('FECHA_HORA')
+            
+            # Últimos 30 días
             df_final = df_real.tail(720)[['FECHA_HORA', 'CONSUMO_REAL']].copy()
             
             if not df_final.empty:
+                # Desplazar a HOY
                 ultimo = df_final['FECHA_HORA'].max()
                 df_final['FECHA_HORA'] += (pd.Timestamp.now() - ultimo)
                 
+                # INYECCIÓN DETERMINISTA (Gracias al seed del principio)
                 if es_fuga:
                     puntos = len(df_final)
                     duracion = min(random.randint(48, 120), puntos)
@@ -112,14 +127,16 @@ def get_consumo_historico(cliente_id, es_fuga=False):
                     df_final.iloc[-duracion:, 1] += extra
 
                 return df_final
+
     except Exception as e:
         print(f"⚠️ Error CSV: {e}")
 
     return pd.DataFrame()
 
-# --- 4. DETECCIÓN SIMULADA (Escritura Segura) ---
+# --- 4. DETECCIÓN SIMULADA (Escritura Segura + Anti-Duplicados) ---
 def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = None) -> dict:
     X_input = None
+    origen_datos = "Simulado"
     
     # 1. Preparar Datos
     if datos_externos is not None and modelos_ia:
@@ -131,22 +148,28 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
             for c in X_input.columns:
                 if c in CAT: X_input[c] = X_input[c].astype('category')
                 else: X_input[c] = pd.to_numeric(X_input[c], errors='coerce').fillna(0.0)
+            origen_datos = "Lectura Real IoT"
         except: X_input = None
     
     # 2. Predicción
     if modelos_ia and X_input is not None:
         try:
             p_hoy = modelos_ia['HOY'].predict_proba(X_input, raw_score=False)[:, 1][0]
-        except: p_hoy = 0.1
+            p_man = modelos_ia['MANANA'].predict_proba(X_input, raw_score=False)[:, 1][0]
+            p_7d = modelos_ia['7DIAS'].predict_proba(X_input, raw_score=False)[:, 1][0]
+        except: p_hoy, p_man, p_7d = 0.1, 0.1, 0.1
     else:
+        # Fallback aleatorio
         p_hoy = random.random()
+        p_man, p_7d = p_hoy, p_hoy
 
     # 3. Clasificación
-    estado, detalle = _aplicar_reglas(p_hoy, p_hoy, p_hoy) # Simplificado para el ejemplo
+    estado, detalle = _aplicar_reglas(p_hoy, p_man, p_7d)
+    
     if "No Fuga" in estado: 
         return {'status': 'OK', 'message': f'Lectura normal ({p_hoy:.1%})'}
 
-    # 4. BBDD (Gestión Segura)
+    # 4. BBDD (Gestión Segura + Anti-Duplicados)
     conn = _conectar_bbdd()
     if not conn: return {'status': 'ERROR'}
     try:
@@ -167,37 +190,62 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
             )
             datos_cli = {'nombre': nom, 'email': email, 'direccion': "Barcelona"}
         else:
-            # Cliente existente: Desciframos para uso interno temporal
+            # Cliente existente: Desciframos para uso interno
             datos_cli = dict(res)
-            ### SEGURIDAD: Desciframos para saber si tiene email ###
+            ### SEGURIDAD: Desciframos ###
             datos_cli['email'] = descifrar_pii(datos_cli['email'])
             datos_cli['nombre'] = descifrar_pii(datos_cli['nombre'])
 
         desc = f"{estado}. Prob: {p_hoy:.0%}. {detalle}"
-        cur.execute("INSERT INTO incidencias (cliente_id, estado, verificacion, descripcion) VALUES (?, ?, ?, ?)",
-                    (str(cliente_id), estado, 'PENDIENTE', desc))
-        new_id = cur.lastrowid
 
-        # Acciones
+        # --- CORRECCIÓN ANTI-DUPLICADOS ---
+        # Buscamos si ya existe una incidencia NO resuelta para este cliente
+        cur.execute("SELECT id FROM incidencias WHERE cliente_id = ? AND verificacion != 'RESUELTA'", (str(cliente_id),))
+        inc_existente = cur.fetchone()
+        
+        new_id = None
+        msg_accion = ""
+        
+        if inc_existente:
+            # ACTUALIZAR la existente
+            new_id = inc_existente['id']
+            cur.execute("""
+                UPDATE incidencias 
+                SET estado = ?, descripcion = ?, fecha_deteccion = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            """, (estado, desc, new_id))
+            msg_accion = "(Actualizada)"
+        else:
+            # CREAR nueva
+            cur.execute("INSERT INTO incidencias (cliente_id, estado, verificacion, descripcion) VALUES (?, ?, ?, ?)",
+                        (str(cliente_id), estado, 'PENDIENTE', desc))
+            new_id = cur.lastrowid
+            msg_accion = "(Nueva)"
+
+        # Acciones (Notificaciones)
+        # Solo enviamos si es nueva o si ha empeorado a Grave
         tiene_email = (datos_cli.get('email') is not None)
         msg_extra = ""
         
         if "Leve" not in estado:
             if not tiene_email:
+                # Actualizamos estado a CARTA PENDIENTE si no lo estaba ya
                 cur.execute("UPDATE incidencias SET verificacion = 'CARTA PENDIENTE' WHERE id = ?", (new_id,))
                 msg_extra = "Carta Pendiente"
             else:
-                ### SEGURIDAD: Token Criptográfico Seguro ###
+                # TOKEN SEGURO
                 token = generar_token_seguro() 
                 link = f"http://127.0.0.1:8050/verificar/{token}"
                 msg = f"Hola {datos_cli['nombre']}, alerta GeSAI: {estado}."
                 
+                # Limpiamos tokens anteriores de esta incidencia para no acumular basura
+                cur.execute("DELETE FROM tokens_verificacion WHERE incidencia_id = ?", (new_id,))
                 cur.execute("INSERT INTO tokens_verificacion (token, incidencia_id) VALUES (?, ?)", (token, new_id))
                 cur.execute("INSERT INTO notificaciones (cliente_id, mensaje, link) VALUES (?, ?, ?)", (str(cliente_id), msg, link))
                 msg_extra = "Push Enviado"
 
         conn.commit()
-        return {'status': 'ALERTA', 'message': f"{estado} - {msg_extra}"}
+        return {'status': 'ALERTA', 'message': f"{estado} {msg_accion} - {msg_extra}"}
     finally:
         conn.close()
 
@@ -227,15 +275,20 @@ def get_lista_incidencias_activas(filtro="todas"):
     if not conn: return []
     
     try:
-        # Prevenimos Inyección SQL en el filtro usando '?'
-        sql = "SELECT i.*, c.nombre as cliente_nombre FROM incidencias i JOIN clientes c ON i.cliente_id = c.cliente_id"
+        # FILTRAMOS SOLO LAS NO RESUELTAS (Importante para el dashboard)
+        sql = """
+            SELECT i.*, c.nombre as cliente_nombre 
+            FROM incidencias i 
+            JOIN clientes c ON i.cliente_id = c.cliente_id
+            WHERE i.verificacion != 'RESUELTA'
+        """
         params = []
         
         if filtro != "todas": 
-            sql += " WHERE i.estado LIKE ?"
+            sql += " AND i.estado LIKE ?"
             params.append(f"%{filtro}%")
             
-        sql += " ORDER BY i.id DESC LIMIT 50"
+        sql += " ORDER BY i.fecha_deteccion DESC LIMIT 50"
         
         cur = conn.cursor()
         cur.execute(sql, params) # Pasamos params de forma segura
