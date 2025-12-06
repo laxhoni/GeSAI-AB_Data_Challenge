@@ -11,7 +11,7 @@ import json
 import sys
 import math
 
-# --- IMPORTACIÓN SEGURA DEL GESTOR CRIPTOGRÁFICO ---
+# Importación de la función de firma digital
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
     from crypto_manager import firmar_digitalmente
@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUTA_CARTAS = os.path.join(BASE_DIR, "generated_reports", "regular_mails")
 os.makedirs(RUTA_CARTAS, exist_ok=True)
 
-# --- PALETA DE COLORES ---
+# Paleta de colores
 COLOR_PRIMARIO = (0, 89, 157)
 COLOR_SECUNDARIO = (100, 100, 100)
 COLOR_TEXTO = (40, 40, 40)
@@ -37,7 +37,6 @@ class PDF_GesAI(FPDF):
     def __init__(self):
         super().__init__()
         self.logo_path = self._find_logo()
-        # Margen inferior automático
         self.set_auto_page_break(auto=True, margin=15)
         self.set_margins(18, 15, 18) 
         self.digital_signature = None 
@@ -83,7 +82,7 @@ class PDF_GesAI(FPDF):
         self.ln(8)
 
     def footer(self):
-        # --- FIRMA LATERAL ---
+        # Firma digital lateral
         if self.digital_signature:
             self.set_font('Courier', '', 4)
             self.set_text_color(160, 160, 160)
@@ -98,7 +97,7 @@ class PDF_GesAI(FPDF):
                 col_x = start_x - ((i + 1) * 2) 
                 self.RotatedText(col_x, 290, chunk, 90)
         
-        # --- PIE DE PÁGINA ---
+        # Pie de página estándar
         self.set_y(-12) 
         self.set_font('Helvetica', '', 6)
         self.set_text_color(180, 180, 180)
@@ -279,7 +278,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     return filename
 
 # ==============================================================================
-# 2. CARTA POSTAL (COMPLETA Y RECUPERADA)
+# 2. CARTA POSTAL 
 # ==============================================================================
 def generar_carta_postal_pdf(incidencia_id, cliente):
     import os, time
@@ -301,11 +300,11 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.set_xy(110, 50); pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(0, 0, 0)
     pdf.multi_cell(85, 5, f"{cliente.get('nombre','')}\n{cliente.get('direccion','')}\n", align="L"); pdf.ln(30)
     
-    # TITULO CARTA
+    # Título carta
     pdf.set_font("Helvetica", "B", 12); pdf.set_text_color(*COLOR_ALERTA)
     pdf.cell(0, 8, f"AVÍS IMPORTANT: ANOMALIA DE CONSUM (REF. #{incidencia_id})", ln=1); pdf.ln(5)
     
-    # CUERPO RECUPERADO
+    # Cuerpo carta estándar
     pdf.set_font("Helvetica", "", 10); pdf.set_text_color(40, 40, 40)
     cuerpo = (
         f"Benvolgut/da client/a,\n\n"
@@ -319,7 +318,7 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.multi_cell(0, 5, cuerpo)
     pdf.ln(10)
     
-    # CALL TO ACTION
+    # instrucciones actualización contacto
     pdf.set_draw_color(*COLOR_PRIMARIO); pdf.set_fill_color(250, 252, 255); pdf.set_line_width(0.3)
     y_start = pdf.get_y(); pdf.rect(15, y_start, 180, 20, style="DF")
     pdf.set_xy(20, y_start + 5); pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(*COLOR_PRIMARIO)
@@ -328,7 +327,7 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.write(5, "Accedeixi a l'Àrea de Clients: "); pdf.set_font("Helvetica", "U", 9); pdf.set_text_color(0, 0, 255)
     pdf.write(5, "https://www.aiguesdebarcelona.cat/es/area-clientes", "https://www.aiguesdebarcelona.cat/es/area-clientes"); pdf.ln(20)
 
-    # --- PIE DE PÁGINA DE CONTACTO (RECUPERADO) ---
+    # Pie de página de contacto
     pdf.set_draw_color(200, 200, 200); pdf.line(20, pdf.get_y(), 190, pdf.get_y()); pdf.ln(5)
     pdf.set_text_color(80, 80, 80); pdf.set_font("Helvetica", "B", 8)
     pdf.cell(0, 5, "CANALS D'ATENCIÓ AL CLIENT", ln=1)
@@ -338,7 +337,6 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.cell(30, 5, "Atenció Client:"); pdf.cell(60, 5, "900 710 710  /  935 219 777")
     pdf.cell(40, 5, "Web:"); pdf.set_text_color(0, 0, 255)
     pdf.cell(0, 5, "www.aiguesdebarcelona.cat", ln=1, link="https://www.aiguesdebarcelona.cat")
-    # ----------------------------------------------
 
     pdf.output(filepath)
     return filepath
