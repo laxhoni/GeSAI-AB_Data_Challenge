@@ -7,7 +7,7 @@ import pandas as pd
 from flask import send_file
 import os
 
-# importar módulos internos
+#importar módulos internos
 from motor_gesai import (
     verificar_credenciales,
     get_lista_incidencias_activas,
@@ -38,9 +38,8 @@ app = dash.Dash(
 )
 
 
-# ------------------------------------------------------------
-# HELPERS / COMPONENTS
-# ------------------------------------------------------------
+
+#HELPERS / COMPONENTS
 def kpi_card(titulo, valor, icono):
     return html.Div(className='kpi animated-fade', children=[
         html.Div([html.Div(titulo, className='kpi-label'), html.Div(str(valor), className='kpi-value')]),
@@ -219,20 +218,11 @@ def _build_confirmation_layout(cliente_id):
         ])
     ])
 
-##def _build_confirmation_layout(cliente_id):
-    #return html.Div(className='card', children=[
-        #html.Div(style={'textAlign': 'center', 'padding': '40px'}, children=[
-            #html.Div('✅', style={'fontSize': '50px', 'marginBottom': '20px'}),
-            #html.H3('Recibido', style={'color': 'var(--primary)'}),
-            #html.P('Gracias. Hemos registrado sus respuestas.', style={'color': 'var(--muted)'}),
-            #dcc.Link("Volver", href=f"/sim-movil/{cliente_id}", className='btn-block', style={'textDecoration': 'none', 'display': 'inline-block', 'marginTop':'20px', 'width':'auto','padding':'10px 20px'})
-        #])
-    #])  
+ 
 
 
-# ------------------------------------------------------------
-# LAYOUTS principales
-# ------------------------------------------------------------
+
+#LAYOUTS principales
 def build_login_layout():
     return html.Div(className="login-wrapper", children=[
         html.Div(className="login-card container-centered", children=[
@@ -256,7 +246,7 @@ def build_login_layout():
                     "Introduce tu contraseña", 
                     id='login-error', 
                     className='small-muted', 
-                    style={'minHeight': '22px', 'marginTop': '8px', 'color': '#6b7280'} # Color gris suave
+                    style={'minHeight': '22px', 'marginTop': '8px', 'color': '#6b7280'}
                 ),
 
                 html.Button("Acceder al Sistema", id='btn-login', className='btn-primary'),
@@ -311,9 +301,8 @@ def build_empresa_layout(session_data):
     return html.Div([dcc.Interval(id='intervalo-refresco', interval=2000, n_intervals=0), header, body])
 
 
-# ------------------------------------------------------------
-# ROOT layout
-# ------------------------------------------------------------
+
+#ROOT layout
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dcc.Store(id='session-store', storage_type='session', data={'logged_in': False}),
@@ -324,9 +313,8 @@ app.layout = html.Div([
 ])
 
 
-# ------------------------------------------------------------
-# CALLBACKS
-# ------------------------------------------------------------
+
+#CALLBACKS
 @callback(
     [Output('session-store', 'data'),
      Output('login-error', 'children'),
@@ -336,8 +324,7 @@ app.layout = html.Div([
     prevent_initial_call=True  
 )
 def login(n, u, p):
-    # Si n es None o 0, significa que nadie ha pulsado el botón aún.
-    # Devolvemos "no_update" para NO cambiar nada en la pantalla.
+    #Si n es None o 0, significa que nadie ha pulsado el botón aún. Devolvemos "no_update" para NO cambiar nada en la pantalla.
     if not n:
         return no_update, no_update, no_update
 
@@ -346,7 +333,7 @@ def login(n, u, p):
     if res.get('success'):
         return {'logged_in': True, 'rol': 'Empresa', 'nombre': res.get('nombre')}, None, '/dashboard'
     
-    # Solo si ha fallado REALMENTE (después de clicar), mostramos el error
+    #Solo si ha fallado REALMENTE (después de clicar), mostramos el error
     mensaje_error = html.Span("⚠ Contraseña incorrecta", style={'color': '#dc3545', 'fontWeight': 'bold'})
     
     return no_update, mensaje_error, no_update
@@ -358,7 +345,7 @@ def login(n, u, p):
     prevent_initial_call=True
 )
 def logout(n):
-    # si no hay clicks -> no_update
+    #si no hay clicks -> no_update
     if not any(n):
         return no_update, no_update
     return {'logged_in': False}, '/'
@@ -369,7 +356,7 @@ def display_page(pathname, session_data):
     pathname = pathname or '/'
     parts = pathname.strip('/').split('/')
     
-    # 1. RUTAS PÚBLICAS (Móvil y Verificación) - Tienen prioridad
+    #RUTAS PÚBLICAS (Móvil y Verificación) - Tienen prioridad
     if len(parts) >= 2 and parts[0] == 'sim-movil':
         # Aceptamos ID numérico o texto (póliza)
         cliente_id = parts[1]
@@ -378,15 +365,15 @@ def display_page(pathname, session_data):
     if len(parts) == 2 and parts[0] == 'verificar':
         return build_verificacion_layout(parts[1]) # Token
 
-    # 2. RUTAS PRIVADAS (Empresa) - Requieren Login
+    #RUTAS PRIVADAS (Empresa) - Requieren Login
     if session_data and session_data.get('logged_in'):
         if pathname in ['/', '/dashboard']:
             return build_empresa_layout(session_data)
-        # Si intenta ir al login estando logueado, a casa
+        #Si intenta ir al login estando logueado, a pantalla principal
         if pathname == '/login':
             return dcc.Location(pathname='/', id='redirect-home')
             
-    # 3. DEFAULT (Login)
+    #DEFAULT (Login)
     return build_login_layout()
 
 
@@ -399,7 +386,7 @@ def display_page(pathname, session_data):
 def refresh_dashboard(n, filtro):
     filtro = (filtro or 'todas').upper()
         
-    # Esta línea es la clave: el "or []" evita que 'todas' sea None
+    #Esta línea es la clave: el "or []" evita que 'todas' sea None
     todas = get_lista_incidencias_activas('todas') or []
 
     def match(i):
@@ -440,11 +427,11 @@ def refresh_dashboard(n, filtro):
     prevent_initial_call=True
 )
 def update_filter(n):
-    # si no hay botones en el layout → no ejecutar
+    #si no hay botones en el layout → no ejecutar
     if n is None or len(n) == 0:
         raise PreventUpdate
 
-    # opciones fijas (orden fijo)
+    #opciones fijas (orden fijo)
     options = ['todas', 'Grave', 'Moderada', 'CARTA']
     triggered = ctx.triggered_id
 
@@ -468,11 +455,11 @@ def handle_details(n_card, n_close):
     tid = ctx.triggered_id
     if not tid: return no_update
 
-    # CASO 1: CERRAR
+    #CASO 1: CERRAR
     if isinstance(tid, dict) and tid.get('type') == 'btn-close-details':
         return None
 
-    # CASO 2: ABRIR DETALLES
+    #CASO 2: ABRIR DETALLES
     if isinstance(tid, dict) and tid.get('type') == 'incidencia-card':
         if not any(n_card): return no_update
 
@@ -482,7 +469,7 @@ def handle_details(n_card, n_close):
         inc, cli = data['datos_incidencia'], data['datos_cliente']
         tiene_contacto = cli.get("email") or cli.get("telefono")
 
-        # Estilos comunes botones
+        #Estilos comunes botones
         estilo_btn = {
             "flex": "1", "textAlign": "center", "padding": "10px",
             "borderRadius": "6px", "textDecoration": "none", "color": "white",
@@ -490,7 +477,7 @@ def handle_details(n_card, n_close):
             "alignItems": "center", "justifyContent": "center"
         }
         
-        # Botón Informe
+        #Botón Informe
         btn_informe = html.A(
             "📄 Informe Técnico",
             href=f"/download/informe/{inc['id']}",
@@ -500,7 +487,7 @@ def handle_details(n_card, n_close):
 
         botones = [btn_informe]
 
-        # Botón Carta
+        #Botón Carta
         if not tiene_contacto:
             btn_carta = html.A(
                 "📮 Carta Postal",
@@ -512,7 +499,7 @@ def handle_details(n_card, n_close):
 
         contenedor_botones = html.Div(children=botones, style={'display': 'flex', 'marginTop': '20px', 'width': '100%'})
 
-        # Renderizar
+        #Renderizar
         return html.Div(
             className='details-panel animated-slide-up',
             children=[
@@ -546,26 +533,24 @@ def mobile_poll(n, cid, path):
     if not path or not cid:
         return no_update
         
-    # Evitar molestar si el usuario está en flujo de verificación
+    #Evitar molestar si el usuario está en flujo de verificación
     if 'verificar' in path or 'confirmacion' in path or 'recomendaciones' in path:
         return no_update
     
-    # 1. Buscar nuevas notificaciones en backend
+    #Buscar nuevas notificaciones en backend
     notifs = get_notificaciones_pendientes_cliente(cid)
     
-    # Si NO hay nuevas, no hacemos nada (mantenemos la que ya está en pantalla, si hay alguna)
+    
     if not notifs:
         return no_update 
     
-    # 2. Si HAY nuevas:
-    # Nos quedamos solo con la ÚLTIMA de la lista (la más reciente)
-    # y marcamos TODAS las pendientes como leídas para que no vuelvan a salir.
+
     latest_notif = notifs[-1] 
     
     for notif in notifs:
         marcar_notificacion_leida(notif['notificacion_id'])
     
-    # 3. Construimos LA tarjeta (Solo una)
+    #Construimos LA tarjeta (Solo una)
     link = f"/sim-movil/{cid}/verificar/{latest_notif['link'].split('/')[-1]}"
     
     card = html.Div(className='mobile-notif animated-bounce-in', children=[
@@ -575,9 +560,8 @@ def mobile_poll(n, cid, path):
         dcc.Link('Verificar', href=link, className='mobile-btn')
     ])
     
-    # 4. DEVOLVEMOS SOLO ESTA TARJETA
-    # Al devolver [card], Dash elimina todo lo que hubiera antes en el div
-    # y pone solo este elemento nuevo.
+    #DEVOLVEMOS SOLO ESTA TARJETA
+    #Al devolver [card], Dash elimina todo lo que hubiera antes en el div y pone solo este elemento nuevo.
     return [card]
 
 @callback(
@@ -587,15 +571,14 @@ def mobile_poll(n, cid, path):
     prevent_initial_call=True
 )
 def submit_survey(n, token, resps, path):
-    # 1. Validación básica
+    
     if not token:
         return html.P("Error: Token no encontrado", className='survey-result-error'), no_update
         
     if any(r is None for r in resps):
         return html.P("⚠️ Por favor, responda a todas las preguntas antes de enviar.", className='survey-result-error'), no_update
     
-    # 2. Definición de preguntas (Deben coincidir con las del layout _build_survey_layout)
-    # IMPORTANTE: El orden de esta lista debe ser el mismo que en el layout visual.
+    #Definición de preguntas (Deben coincidir con las del layout _build_survey_layout) orden de esta lista debe ser el mismo que en el layout visual.
     preguntas_texto = [
         "1. ¿Ha notado un sonido de agua corriendo (siseo)?",
         "2. ¿Algún grifo o cisterna pierde agua?",
@@ -606,10 +589,8 @@ def submit_survey(n, token, resps, path):
         "7. ¿El proceso de notificación ha sido claro?"
     ]
     
-    # 3. Empaquetar datos: Unimos Pregunta + Respuesta
+   
     datos_encuesta = []
-    # Usamos zip para unir la pregunta i con la respuesta i
-    # (Aseguramos no salirnos de rango si hubiera discrepancia)
     for i, respuesta in enumerate(resps):
         if i < len(preguntas_texto):
             pregunta_actual = preguntas_texto[i]
@@ -619,7 +600,7 @@ def submit_survey(n, token, resps, path):
         datos_encuesta.append({
             'id': i+1,
             'pregunta': pregunta_actual,
-            'respuesta': respuesta  # Esto será 'SI', 'NO', 'NO_SE'
+            'respuesta': respuesta  #Esto será SI, NO, NO SE
         })
     
     # 4. Enviar al Motor
@@ -627,16 +608,15 @@ def submit_survey(n, token, resps, path):
     
     # 5. Gestionar respuesta
     if resultado.get('success'):
-        # Si todo va bien, redirigir a confirmación
         if path:
             parts = path.split('/')
-            # Esperamos estructura /sim-movil/{id}/verificar/{token}
-            # Redirigimos a /sim-movil/{id}/confirmacion
+            #Esperamos estructura /sim-movil/{id}/verificar/{token}
+            #Redirigimos a /sim-movil/{id}/confirmacion
             if len(parts) >= 3:
                 return no_update, f"/{parts[1]}/{parts[2]}/confirmacion"
         return html.P("Encuesta enviada correctamente.", style={'color':'green'}), no_update
     else:
-        # Error del backend (token inválido, error SQL, etc.)
+        
         return html.P(f"Error: {resultado.get('message')}", className='survey-result-error'), no_update
 # CLIENTSIDE: toggle dark mode (más rápido, sin roundtrip)
 app.clientside_callback(
@@ -659,10 +639,9 @@ app.clientside_callback(
     Input('dark-mode-toggle', 'n_clicks')
 )
 
-# -------- SERVIR PDF DE INFORME TÉCNICO --------
+#RUTA PDF DE INFORME TÉCNICO --------
 @app.server.route('/download/informe/<int:id>')
 def download_informe(id):
-    # 1. Obtener datos de la incidencia
     data = get_detalles_incidencia(id)
     if not data.get("success"):
         return "No existe", 404
@@ -670,18 +649,15 @@ def download_informe(id):
     inc = data["datos_incidencia"]
     cli = data["datos_cliente"]
 
-    # 2. Detectar si es fuga para activar la inyección de datos en el motor
     estado = str(inc.get('estado', '')).upper()
     es_fuga = "GRAVE" in estado or "MODERADA" in estado
 
-    # 3. LLAMADA AL MOTOR (Esto trae los datos reales/variados, no el 01/01)
-    # Usamos el ID del cliente para buscar en el CSV
     hist = get_consumo_historico(cli.get('cliente_id'), es_fuga=es_fuga)
 
-    # 4. Generar PDF
+    #Generar PDF
     filename = generar_informe_tecnico_pdf(id, cli, inc, hist)
 
-    # Enviar fichero al navegador
+    #Enviar fichero al navegador
     return send_file(filename, as_attachment=True)
 
 

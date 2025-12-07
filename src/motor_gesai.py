@@ -11,7 +11,7 @@ from faker import Faker
 from reports_manager import generar_carta_postal_pdf, generar_informe_tecnico_pdf
 import json
 
-# --- IMPORTAMOS EL GESTOR DE CRIPTOGRAFÍA ---
+#GESTOR DE CRIPTO
 from crypto_manager import (
     verificar_password, 
     cifrar_pii, 
@@ -19,23 +19,23 @@ from crypto_manager import (
     generar_token_seguro
 )
 
-# --- 1. CONFIGURACIÓN ---
+#CONFIG
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(CURRENT_DIR) # Raíz del proyecto
+BASE_DIR = os.path.dirname(CURRENT_DIR) #Raíz del proyecto
 DB_PATH = os.path.join(BASE_DIR, 'gesai.db')
 MODELOS_DIR = os.path.join(BASE_DIR, 'data', 'processed-data')
 
-# Umbrales de Negocio
+#Umbrales
 UMBRAL_SEGURIDAD = 0.30
 UMBRAL_ALERTA = 0.70
 UMBRAL_CRITICO = 0.85
 TENDENCIA_RAPIDA = 0.05
 TENDENCIA_ESTRUCTURAL = 0.15
 
-# Silenciar warnings versiones sklearn
+
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
-warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning) #Silenciar warnings versiones sklearn
 
 faker = Faker('es_ES')
 modelos_ia = {}
@@ -43,7 +43,7 @@ features_modelo = []
 
 def _conectar_bbdd():
     try:
-        # Usamos la ruta absoluta DB_PATH
+        #Usamos la ruta DB_PATH
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         conn.execute("PRAGMA foreign_keys = 1")
         conn.row_factory = sqlite3.Row 
@@ -52,7 +52,7 @@ def _conectar_bbdd():
         print(f"❌ Error conectando a BBDD: {e}")
         return None
 
-# --- 2. INICIALIZACIÓN ---
+#INICIALIZACIÓN
 def inicializar_motor():
     global modelos_ia, features_modelo
     print("--- INICIALIZANDO MOTOR GeSAI (MODO SEGURO + ANTI-DUPLICADOS) ---")
@@ -82,7 +82,7 @@ def _aplicar_reglas(p_hoy, p_manana, p_7dias):
     return "Fuga Grave", "Crítica"
 
 
-# --- 3. FUNCIÓN DE OBTENCIÓN DE HISTÓRICO REAL ---
+#OBTENCIÓN DE HISTÓRICO REAL
 def get_consumo_historico(cliente_id, es_fuga=False):
     """
     Recupera historial REAL.
@@ -92,34 +92,33 @@ def get_consumo_historico(cliente_id, es_fuga=False):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path_datos = os.path.join(base_dir, 'data', 'processed-data', 'datos_simulacion_features.csv')
     
-    # FIJAR LA SEMILLA CON EL ID DEL CLIENTE
+    #SEMILLA CON EL ID DEL CLIENTE
     random.seed(str(cliente_id))
     
     try:
         if os.path.exists(path_datos):
             df = pd.read_csv(path_datos, usecols=['POLISSA_SUBM', 'FECHA_HORA_CRONO', 'CONSUMO_REAL'], dtype={'POLISSA_SUBM': str})
             
-            # Filtrado estricto
+            #Filtrado poliza
             df_real = df[df['POLISSA_SUBM'] == str(cliente_id)].copy()
             
             if df_real.empty:
-                # Si no existe, devolvemos vacío (el PDF dirá "Sin datos")
-                # O puedes descomentar el fallback si prefieres simulación siempre
+                #Sin datos
                 return pd.DataFrame() 
 
-            # Fechas
+            
             df_real['FECHA_HORA'] = pd.to_datetime(df_real['FECHA_HORA_CRONO'], errors='coerce')
             df_real = df_real.sort_values('FECHA_HORA')
             
-            # Últimos 30 días
+            
             df_final = df_real.tail(720)[['FECHA_HORA', 'CONSUMO_REAL']].copy()
             
             if not df_final.empty:
-                # Desplazar a HOY
+                
                 ultimo = df_final['FECHA_HORA'].max()
                 df_final['FECHA_HORA'] += (pd.Timestamp.now() - ultimo)
                 
-                # INYECCIÓN DETERMINISTA (Gracias al seed del principio)
+                
                 if es_fuga:
                     puntos = len(df_final)
                     duracion = min(random.randint(48, 120), puntos)
@@ -133,7 +132,7 @@ def get_consumo_historico(cliente_id, es_fuga=False):
 
     return pd.DataFrame()
 
-# --- 4. DETECCIÓN SIMULADA (Escritura Segura + Anti-Duplicados) ---
+#DETECCIÓN SIMULADA
 def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = None) -> dict:
     X_input = None
     origen_datos = "Simulado"
@@ -179,7 +178,7 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
         
         datos_cli = {}
         if not res:
-            # Crear cliente dummy (CIFRANDO DATOS)
+            
             nom = faker.name()
             email = f"{nom.split()[0]}@test.com"
             
@@ -190,7 +189,7 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
             )
             datos_cli = {'nombre': nom, 'email': email, 'direccion': "Barcelona"}
         else:
-            # Cliente existente: Desciframos para uso interno
+            #Cliente existente: Desciframos para uso interno
             datos_cli = dict(res)
             ### SEGURIDAD: Desciframos ###
             datos_cli['email'] = descifrar_pii(datos_cli['email'])
@@ -198,8 +197,7 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
 
         desc = f"{estado}. Prob: {p_hoy:.0%}. {detalle}"
 
-        # --- CORRECCIÓN ANTI-DUPLICADOS ---
-        # Buscamos si ya existe una incidencia NO resuelta para este cliente
+        #Buscamos si ya existe una incidencia NO resuelta para este cliente
         cur.execute("SELECT id FROM incidencias WHERE cliente_id = ? AND verificacion != 'RESUELTA'", (str(cliente_id),))
         inc_existente = cur.fetchone()
         
@@ -207,7 +205,7 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
         msg_accion = ""
         
         if inc_existente:
-            # ACTUALIZAR la existente
+            
             new_id = inc_existente['id']
             cur.execute("""
                 UPDATE incidencias 
@@ -216,29 +214,27 @@ def ejecutar_deteccion_simulada(cliente_id: str, datos_externos: pd.Series = Non
             """, (estado, desc, new_id))
             msg_accion = "(Actualizada)"
         else:
-            # CREAR nueva
+           
             cur.execute("INSERT INTO incidencias (cliente_id, estado, verificacion, descripcion) VALUES (?, ?, ?, ?)",
                         (str(cliente_id), estado, 'PENDIENTE', desc))
             new_id = cur.lastrowid
             msg_accion = "(Nueva)"
 
-        # Acciones (Notificaciones)
-        # Solo enviamos si es nueva o si ha empeorado a Grave
+        
+        #Solo enviamos si es nueva o si ha empeorado a Grave
         tiene_email = (datos_cli.get('email') is not None)
         msg_extra = ""
         
         if "Leve" not in estado:
             if not tiene_email:
-                # Actualizamos estado a CARTA PENDIENTE si no lo estaba ya
+                
                 cur.execute("UPDATE incidencias SET verificacion = 'CARTA PENDIENTE' WHERE id = ?", (new_id,))
                 msg_extra = "Carta Pendiente"
             else:
-                # TOKEN SEGURO
                 token = generar_token_seguro() 
                 link = f"http://127.0.0.1:8050/verificar/{token}"
                 msg = f"Hola {datos_cli['nombre']}, alerta GeSAI: {estado}."
                 
-                # Limpiamos tokens anteriores de esta incidencia para no acumular basura
                 cur.execute("DELETE FROM tokens_verificacion WHERE incidencia_id = ?", (new_id,))
                 cur.execute("INSERT INTO tokens_verificacion (token, incidencia_id) VALUES (?, ?)", (token, new_id))
                 cur.execute("INSERT INTO notificaciones (cliente_id, mensaje, link) VALUES (?, ?, ?)", (str(cliente_id), msg, link))

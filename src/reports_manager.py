@@ -11,7 +11,7 @@ import json
 import sys
 import math
 
-# Importación de la función de firma digital
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
     from crypto_manager import firmar_digitalmente
@@ -22,7 +22,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUTA_CARTAS = os.path.join(BASE_DIR, "generated_reports", "regular_mails")
 os.makedirs(RUTA_CARTAS, exist_ok=True)
 
-# Paleta de colores
 COLOR_PRIMARIO = (0, 89, 157)
 COLOR_SECUNDARIO = (100, 100, 100)
 COLOR_TEXTO = (40, 40, 40)
@@ -82,7 +81,7 @@ class PDF_GesAI(FPDF):
         self.ln(8)
 
     def footer(self):
-        # Firma digital lateral
+        #Firma digital lateral
         if self.digital_signature:
             self.set_font('Courier', '', 4)
             self.set_text_color(160, 160, 160)
@@ -137,9 +136,7 @@ def _generar_grafica_consumo_compacta(df_historico, filename):
     plt.savefig(filename, dpi=150)
     plt.close()
 
-# ==============================================================================
-# 1. INFORME TÉCNICO
-# ==============================================================================
+#Informe
 def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, historico_df=None):
     pdf = PDF_GesAI()
     fecha_hoy = time.strftime("%d/%m/%Y")
@@ -150,20 +147,20 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
 
     pdf.add_page()
     
-    # Header Doc
+    
     pdf.set_font('Helvetica', 'B', 14); pdf.set_text_color(40, 40, 40)
     pdf.cell(120, 8, "INFORME TÈCNIC D'INCIDÈNCIA", 0, 0)
     pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 8, f"REF: #{incidencia_id} | {fecha_hoy}", 0, 1, 'R')
 
-    # 1. Datos
+    
     pdf.section_title("1. Dades del Punt de Subministrament")
     pdf.key_value_row("Titular:", datos_cliente.get('nombre', 'N/A'), True)
     pdf.key_value_row("Pòlissa:", datos_cliente.get('cliente_id', 'N/A'))
     pdf.key_value_row("Adreça:", datos_cliente.get('direccion', 'N/A'))
     pdf.key_value_row("Contacte:", f"{datos_cliente.get('telefono', '-')} / {datos_cliente.get('email', '-')}")
 
-    # 2. Diagnóstico
+    
     pdf.section_title("2. Diagnòstic del Sistema (IA)")
     estado = datos_incidencia.get('estado', 'PENDENT').upper()
     if "GRAVE" in estado: bg, txt = (255, 235, 235), COLOR_ALERTA
@@ -182,7 +179,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     pdf.key_value_row("Probabilitat:", f"{datos_incidencia.get('prob_hoy', 0):.2%}")
     pdf.key_value_row("Descripció:", datos_incidencia.get('descripcion', '-'))
 
-    # 3. Análisis
+  
     if historico_df is not None and not historico_df.empty:
         pdf.section_title("3. Anàlisi de Facturació")
         
@@ -243,7 +240,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
             os.remove(chart_path)
         except Exception as e: pdf.cell(0, 5, f"Error: {e}", 0, 1)
             
-    # 4. Encuesta
+    
     encuesta = datos_incidencia.get('encuesta_resultado')
     if encuesta:
         try:
@@ -277,9 +274,7 @@ def generar_informe_tecnico_pdf(incidencia_id, datos_cliente, datos_incidencia, 
     pdf.output(filename)
     return filename
 
-# ==============================================================================
-# 2. CARTA POSTAL 
-# ==============================================================================
+#carta postal
 def generar_carta_postal_pdf(incidencia_id, cliente):
     import os, time
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -300,11 +295,11 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.set_xy(110, 50); pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(0, 0, 0)
     pdf.multi_cell(85, 5, f"{cliente.get('nombre','')}\n{cliente.get('direccion','')}\n", align="L"); pdf.ln(30)
     
-    # Título carta
+    #Título
     pdf.set_font("Helvetica", "B", 12); pdf.set_text_color(*COLOR_ALERTA)
     pdf.cell(0, 8, f"AVÍS IMPORTANT: ANOMALIA DE CONSUM (REF. #{incidencia_id})", ln=1); pdf.ln(5)
     
-    # Cuerpo carta estándar
+    #Cuerpo carta
     pdf.set_font("Helvetica", "", 10); pdf.set_text_color(40, 40, 40)
     cuerpo = (
         f"Benvolgut/da client/a,\n\n"
@@ -318,7 +313,7 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.multi_cell(0, 5, cuerpo)
     pdf.ln(10)
     
-    # instrucciones actualización contacto
+    #Instrucciones actualización contacto
     pdf.set_draw_color(*COLOR_PRIMARIO); pdf.set_fill_color(250, 252, 255); pdf.set_line_width(0.3)
     y_start = pdf.get_y(); pdf.rect(15, y_start, 180, 20, style="DF")
     pdf.set_xy(20, y_start + 5); pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(*COLOR_PRIMARIO)
@@ -327,7 +322,7 @@ def generar_carta_postal_pdf(incidencia_id, cliente):
     pdf.write(5, "Accedeixi a l'Àrea de Clients: "); pdf.set_font("Helvetica", "U", 9); pdf.set_text_color(0, 0, 255)
     pdf.write(5, "https://www.aiguesdebarcelona.cat/es/area-clientes", "https://www.aiguesdebarcelona.cat/es/area-clientes"); pdf.ln(20)
 
-    # Pie de página de contacto
+    #Pie de página de contacto
     pdf.set_draw_color(200, 200, 200); pdf.line(20, pdf.get_y(), 190, pdf.get_y()); pdf.ln(5)
     pdf.set_text_color(80, 80, 80); pdf.set_font("Helvetica", "B", 8)
     pdf.cell(0, 5, "CANALS D'ATENCIÓ AL CLIENT", ln=1)

@@ -11,19 +11,18 @@ from cryptography.hazmat.backends import default_backend
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 
-# Configuración de rutas
+#Configuración de rutas
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 KEYS_DIR = os.path.join(BASE_DIR, 'keys')
 os.makedirs(KEYS_DIR, exist_ok=True)
 
-# Rutas de archivos de claves
+#Rutas de archivos de claves y certificados
 PATH_CLAVE_PRIVADA = os.path.join(KEYS_DIR, 'gesai_private_key.pem')
 PATH_CERTIFICADO = os.path.join(KEYS_DIR, 'gesai_certificate.pem')
 PATH_CLAVE_SIMETRICA = os.path.join(KEYS_DIR, 'secret.key')
 
-# ==============================================================================
-# 1. GESTIÓN DE CLAVES SIMÉTRICAS (Para cifrar datos en la BBDD)
-# ==============================================================================
+
+#GESTIÓN DE CLAVES SIMÉTRICAS (Para cifrar datos en la BBDD)
 def _cargar_o_crear_clave_simetrica():
     """Carga la clave maestra AES. Si no existe, la crea."""
     if os.path.exists(PATH_CLAVE_SIMETRICA):
@@ -36,7 +35,7 @@ def _cargar_o_crear_clave_simetrica():
         print("[*] Nueva clave maestra de cifrado generada.")
         return key
 
-# Instancia global del cifrador (Singleton)
+#Instancia global del cifrador (Singleton)
 _cipher_suite = Fernet(_cargar_o_crear_clave_simetrica())
 
 def cifrar_pii(texto):
@@ -47,7 +46,7 @@ def cifrar_pii(texto):
     """
     if not texto: return None
     try:
-        # Fernet usa AES-128-CBC con HMAC (Integridad + Confidencialidad)
+        #Fernet usa AES-128-CBC con HMAC (Integridad + Confidencialidad)
         return _cipher_suite.encrypt(texto.encode('utf-8')).decode('utf-8')
     except Exception as e:
         print(f"Error cifrando: {e}")
@@ -63,9 +62,8 @@ def descifrar_pii(texto_cifrado):
     except Exception:
         return "[DATOS CORRUPTOS O CLAVE INCORRECTA]"
 
-# ==============================================================================
-# 2. GESTIÓN DE CONTRASEÑAS (Hashing seguro con Scrypt)
-# ==============================================================================
+
+#GESTIÓN DE CONTRASEÑAS (Hashing seguro con Scrypt)
 def hashear_password(password_plano):
     """
     Genera un hash seguro usando Scrypt.
@@ -82,7 +80,7 @@ def hashear_password(password_plano):
     )
     hash_bytes = kdf.derive(password_plano.encode('utf-8'))
     
-    # Guardamos Salt y Hash juntos separados por $
+    #Guardamos Salt y Hash juntos separados por $
     return f"{salt.hex()}${hash_bytes.hex()}"
 
 def verificar_password(password_plano, hash_guardado):
@@ -107,9 +105,7 @@ def verificar_password(password_plano, hash_guardado):
     except Exception:
         return False
 
-# ==============================================================================
-# 3. IDENTIDAD DIGITAL Y FIRMA (PKI)
-# ==============================================================================
+#IDENTIDAD DIGITAL Y FIRMA (PKI)
 def generar_identidad_corporativa():
     """Genera Clave Privada y Certificado Autofirmado (CA) si no existen."""
     if os.path.exists(PATH_CLAVE_PRIVADA) and os.path.exists(PATH_CERTIFICADO):
@@ -117,14 +113,14 @@ def generar_identidad_corporativa():
 
     print("[*] Generando PKI Corporativa para GeSAI...")
     
-    # 1. Generar clave privada RSA
+    #Generar clave privada RSA
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
 
-    # 2. Datos del certificado (Identity)
+    #Datos del certificado (Identity)
     subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, u"ES"),
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Barcelona"),
@@ -132,7 +128,7 @@ def generar_identidad_corporativa():
         x509.NameAttribute(NameOID.COMMON_NAME, u"GeSAI Root CA"),
     ])
 
-    # 3. Construir certificado
+    #Construir certificado
     cert = x509.CertificateBuilder().subject_name(
         subject
     ).issuer_name(
@@ -149,7 +145,7 @@ def generar_identidad_corporativa():
         x509.BasicConstraints(ca=True, path_length=None), critical=True,
     ).sign(private_key, hashes.SHA256(), default_backend())
 
-    # 4. Guardar en disco
+    #Guardar en disco
     with open(PATH_CLAVE_PRIVADA, "wb") as f:
         f.write(private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -185,9 +181,7 @@ def firmar_digitalmente(datos_bytes):
     )
     return signature.hex()
 
-# ==============================================================================
-# 4. UTILIDADES DE SEGURIDAD EXTRA
-# ==============================================================================
+#UTILIDADES DE SEGURIDAD EXTRA
 def generar_token_seguro():
     """Genera un token aleatorio criptográficamente fuerte (URL-safe)."""
     return secrets.token_urlsafe(32)
@@ -198,15 +192,14 @@ def sanitizar_input_texto(texto):
     NOTA: La Inyección SQL se previene usando '?' en las queries, no aquí.
     """
     if not isinstance(texto, str): return str(texto)
-    # Eliminar caracteres peligrosos comunes
+    #Eliminar caracteres peligrosos
     return texto.replace("'", "").replace('"', "").replace(";", "").strip()
 
-# Inicialización automática al importar
+#Inicialización automática
 generar_identidad_corporativa()
 
-# ==============================================================================
-# 5. POLÍTICA DE CONTRASEÑAS
-# ==============================================================================
+
+#POLÍTICA DE CONTRASEÑAS
 def validar_fortaleza_password(password):
     """
     Verifica que la contraseña cumpla los requisitos de seguridad:
